@@ -526,7 +526,7 @@ private suspend fun callOpenRouterApi(
     history: List<Pair<String, String>>
 ): String = withContext(Dispatchers.IO) {
     try {
-        val apiKey = "YOUR_API_KEY_HERE" // REPLACE WITH YOUR OPENROUTER API KEY
+        val apiKey = BuildConfig.OPENROUTER_API_KEY
         val url = URL("https://openrouter.ai/api/v1/chat/completions")
         
         val messages = JSONArray()

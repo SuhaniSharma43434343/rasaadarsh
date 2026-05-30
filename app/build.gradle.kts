@@ -1,4 +1,6 @@
 // ── app/build.gradle.kts ──────────────────────────────────────
+import java.util.Properties
+import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android.application)
@@ -22,6 +24,14 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(FileInputStream(localPropertiesFile))
+        }
+        val apiKey = localProperties.getProperty("OPENROUTER_API_KEY") ?: "YOUR_API_KEY_HERE"
+        buildConfigField("String", "OPENROUTER_API_KEY", "\"$apiKey\"")
     }
 
     buildTypes {
@@ -52,6 +62,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
