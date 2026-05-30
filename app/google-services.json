@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "103141314780",
+    "firebase_url": "https://rasaadarsh-8e038-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "rasaadarsh-8e038",
+    "storage_bucket": "rasaadarsh-8e038.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:103141314780:android:9af0272506b3b55ca32419",
+        "android_client_info": {
+          "package_name": "com.example.rasaushadhies"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7Is8galtFm-rVGFd4TAWA6AzkL3oQJhg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

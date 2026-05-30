@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Use Material3 theme and explicitly disable Action Bar -->
+    <style name="Theme.Rasaushadhies" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Parchment background to match user image - prevents green flash -->
+        <item name="android:windowBackground">#F2EAD3</item>
+        <item name="android:colorBackground">#F2EAD3</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <!-- System splash: parchment color -->
+        <item name="android:windowSplashScreenBackground">#F2EAD3</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_blank</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#F2EAD3</item>
+    </style>
+</resources>

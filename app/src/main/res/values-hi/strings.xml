@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">RASAADARSH</string>
+    <string name="search_hint">औषधि या रोग खोजें…</string>
+    <string name="popular_diseases">प्रचलित रोग</string>
+    <string name="browse">खोजें</string>
+    <string name="all_medicines">सभी औषधियाँ</string>
+    <string name="browse_az">अ-ज़ देखें</string>
+    <string name="saved">सहेजी गई</string>
+    <string name="bookmarked">बुकमार्क</string>
+    <string name="ai_assistant">एआई सहायक</string>
+    <string name="ai_subtitle">औषधियाँ तुलना करें या लाभ पूछें</string>
+    <string name="about_app">ऐप के बारे में</string>
+    <string name="version">वर्जन</string>
+    <string name="results_title">परिणाम</string>
+    <string name="found_medicines">औषधियाँ मिलीं</string>
+    <string name="no_medicines">कोई औषधि नहीं मिली</string>
+    <string name="composition">घटक द्रव्य</string>
+    <string name="preparation">निर्माण विधि</string>
+    <string name="dosage">खुराक</string>
+    <string name="anupana">अनुपान</string>
+    <string name="properties">बनावट और पहचान</string>
+
+    <string name="save_cabinet">कैबिनेट में सहेजें</string>
+    <string name="saved_cabinet">कैबिनेट में सुरक्षित</string>
+    <string name="share_med">औषधि साझा करें</string>
+    <string name="ai_welcome">🌿 नमस्ते! मैं आपका रस औषधि सहायक हूँ। औषधि, लक्षण या रोग के अनुसार खोजें।</string>
+    <string name="verified_record">सत्यापित रिकॉर्ड</string>
+    <string name="ai_reasoning">एआई तर्क</string>
+    <string name="disclaimer">चेतावनी: नामों और शब्दों में शास्त्रीय लिप्यंतरण के कारण भिन्नता हो सकती है। इनका प्रयोग केवल योग्य आयुर्वेदिक चिकित्सक की देखरेख में ही करें।</string>
+</resources>

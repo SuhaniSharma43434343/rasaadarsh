@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">RASAADARSH</string>
+    <string name="search_hint">Search medicine or disease…</string>
+    <string name="popular_diseases">Popular Diseases</string>
+    <string name="browse">Browse</string>
+    <string name="all_medicines">All Medicines</string>
+    <string name="browse_az">Browse A–Z</string>
+    <string name="saved">Saved</string>
+    <string name="bookmarked">Bookmarked</string>
+    <string name="ai_assistant">AI Assistant</string>
+    <string name="ai_subtitle">Compare medicines or ask about benefits</string>
+    <string name="about_app">About</string>
+    <string name="version">Version</string>
+    <string name="results_title">Results</string>
+    <string name="found_medicines">medicines found</string>
+    <string name="no_medicines">No medicines found</string>
+    <string name="composition">Composition</string>
+    <string name="preparation">Preparation Method</string>
+    <string name="dosage">Clinical Dosage</string>
+    <string name="anupana">Anupana</string>
+    <string name="properties">Identifying Properties</string>
+
+
+    <string name="save_cabinet">Save to Cabinet</string>
+    <string name="saved_cabinet">Saved to Cabinet</string>
+    <string name="share_med">Share Medicine</string>
+    <string name="ai_welcome">🌿 Namaste! I am your Rasaushadhi assistant.\n\nSearch by medicine name, symptom, or disease.</string>
+    <string name="verified_record">VERIFIED RECORD</string>
+    <string name="ai_reasoning">ASSISTANT REASONING</string>
+    <string name="disclaimer">Disclaimer: Names and terms are transcribed from classical texts; spellings may vary. These formulations must only be used under the supervision of a qualified Ayurvedic Physician.</string>
+</resources>
