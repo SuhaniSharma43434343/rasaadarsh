@@ -96,40 +96,27 @@ class MedicineViewModel(
             try {
                 android.util.Log.d("MedicineViewModel", "Initializing Database Seeding...")
                 
-                // Check if Db is empty or needs update, and seed on IO thread
                 val count = withContext(Dispatchers.IO) { dao.getMedicineCount() }
-                android.util.Log.d("MedicineViewModel", "Current record count: $count")
-
-                val firstMed = if (count > 0) withContext(Dispatchers.IO) { dao.getAllMedicinesOnce().firstOrNull() } else null
-                
-                // Strict parity check for 250 records
                 val EXPECTED_COUNT = 250 
-                val isCorrupted = firstMed?.ingredients?.contains(", , ,") == true ||
-                                 (firstMed?.ingredients?.contains("Ingredient (Sanskrit)") == true && !firstMed.ingredients.contains("|")) ||
-                                 (firstMed?.benefits?.contains("No description available") == true) ||
-                                 (firstMed?.name?.contains("Anilarir") == true && firstMed?.diseaseCategory != "Aamvata")
-                
-                val needsReseed = count != EXPECTED_COUNT || isCorrupted
+
+                // Only reseed if absolutely necessary to avoid UI hangs during startup
+                val needsReseed = count != EXPECTED_COUNT
 
                 if (needsReseed) {
-                    android.util.Log.i("MedicineViewModel", "Reseeding database... (Count: $count, Expected: $EXPECTED_COUNT)")
+                    android.util.Log.i("MedicineViewModel", "Seeding database... (Count: $count, Expected: $EXPECTED_COUNT)")
                     withContext(Dispatchers.IO) {
                         try {
                             dao.deleteAll()
-                            android.util.Log.d("MedicineViewModel", "Database cleared. Starting fresh seeding from assets...")
-                            
                             val inputStream = application.assets.open("medicines.json")
                             val reader = JsonReader(inputStream.bufferedReader())
                             
                             reader.beginArray()
                             val batch = mutableListOf<MedicineEntity>()
                             var totalInserted = 0
-                            var processedCount = 0
                             
                             while (reader.hasNext()) {
                                 try {
                                     val record: com.example.rasaushadhies.ui.data.MedicineRecord = gson.fromJson(reader, com.example.rasaushadhies.ui.data.MedicineRecord::class.java)
-                                    processedCount++
                                     
                                     val entity = MedicineEntity(
                                         id = record.id,
@@ -138,8 +125,10 @@ class MedicineViewModel(
                                         benefits = record.benefits,
                                         ingredients = record.ingredients,
                                         preparation = record.preparation,
-                                        dosage = record.`dose`, // Note: use backticks if dose is reserved, but usually fine
+                                        dosage = record.`dose`,
                                         anupana = record.anupana,
+                                        reference = record.reference,
+                                        shloka = record.shloka,
                                         isBookmarked = false,
                                         clinicalNotes = "",
                                         diseaseCategory = record.diseaseCategory,
@@ -151,12 +140,10 @@ class MedicineViewModel(
                                     if (batch.size >= 50) {
                                         dao.insertAll(batch)
                                         totalInserted += batch.size
-                                        android.util.Log.d("MedicineViewModel", "Seeded batch of ${batch.size}. Total: $totalInserted")
                                         batch.clear()
                                     }
                                 } catch (e: Exception) {
-                                    android.util.Log.e("MedicineViewModel", "Failed to parse record at index $processedCount: ${e.message}")
-                                    // Skip bad record and continue
+                                    // Skip bad records
                                 }
                             }
                             
@@ -167,16 +154,14 @@ class MedicineViewModel(
                             
                             reader.endArray()
                             reader.close()
-                            
-                            android.util.Log.i("MedicineViewModel", "Seeding successful: $totalInserted records inserted.")
+                            android.util.Log.i("MedicineViewModel", "Seeding successful: $totalInserted records.")
                         } catch (e: Exception) {
-                            android.util.Log.e("MedicineViewModel", "Critical seeding failure: ${e.message}", e)
+                            android.util.Log.e("MedicineViewModel", "Seeding failure: ${e.message}")
                         }
                     }
                 }
                 
-                // ONLY AFTER check/seeding is done, we start observing the database
-                // This prevents the UI from catching a fleeting empty state during deleteAll()
+                // Observe the database
                 launch {
                     dao.getAllMedicines()
                         .map { entities ->
@@ -190,6 +175,8 @@ class MedicineViewModel(
                                     preparation = entity.preparation,
                                     dosage = entity.dosage,
                                     anupana = entity.anupana,
+                                    reference = entity.reference,
+                                    shloka = entity.shloka,
                                     isBookmarked = entity.isBookmarked,
                                     clinicalNotes = entity.clinicalNotes,
                                     ingredientsList = entity.ingredientsList,
@@ -201,7 +188,6 @@ class MedicineViewModel(
                         .collect { _medicines.value = it }
                 }
 
-                // Collect recently viewed
                 launch {
                     dao.getRecentlyViewed()
                         .map { entities ->
@@ -215,6 +201,8 @@ class MedicineViewModel(
                                     preparation = entity.preparation,
                                     dosage = entity.dosage,
                                     anupana = entity.anupana,
+                                    reference = entity.reference,
+                                    shloka = entity.shloka,
                                     isBookmarked = entity.isBookmarked,
                                     clinicalNotes = entity.clinicalNotes,
                                     ingredientsList = entity.ingredientsList,
@@ -223,31 +211,28 @@ class MedicineViewModel(
                             }
                         }
                         .flowOn(Dispatchers.IO)
-                        .collect { mappedRecents ->
-                            _recentMedicines.value = mappedRecents
-                        }
+                        .collect { _recentMedicines.value = it }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("MedicineViewModel", "Initialization crash prevented: ${e.message}", e)
+                android.util.Log.e("MedicineViewModel", "Initialization Error: ${e.message}")
             }
         }
     }
 
     fun toggleBookmark(medicineId: Int) {
         viewModelScope.launch {
-                                         val currentMedicine = _medicines.value.find { it.id == medicineId }
-                                         if (currentMedicine != null) {
-                                             withContext(Dispatchers.IO) {
-                                                 dao.updateBookmarkState(medicineId, !currentMedicine.isBookmarked)
-                                             }
-                                             // Force an immediate local update to the state list for instant UI reaction
-                                             _medicines.update { currentList ->
-                                                 currentList.map { 
-                                                     if (it.id == medicineId) it.copy(isBookmarked = !it.isBookmarked) 
-                                                     else it 
-                                                 }
-                                             }
-                                         }
+            val currentMedicine = _medicines.value.find { it.id == medicineId }
+            if (currentMedicine != null) {
+                withContext(Dispatchers.IO) {
+                    dao.updateBookmarkState(medicineId, !currentMedicine.isBookmarked)
+                }
+                _medicines.update { currentList ->
+                    currentList.map { 
+                        if (it.id == medicineId) it.copy(isBookmarked = !it.isBookmarked) 
+                        else it 
+                    }
+                }
+            }
         }
     }
 
@@ -255,10 +240,6 @@ class MedicineViewModel(
         viewModelScope.launch {
             val currentMedicine = _medicines.value.find { it.name.trim().equals(name.trim(), ignoreCase = true) }
             if (currentMedicine != null) {
-                // Determine the new state. If we are explicitly saving from the AI, we ensure it saves.
-                // It toggles it from AI currently, but actually AI says 'Saved X to your cabinet', so it should ideally force true.
-                // Let's just toggle for now to match old behavior, or force it strictly to 'true'.
-                // AI says: "Saved to your Cabinet", so we force save it (true) to prevent accidental unsaves.
                 val newState = true
                 withContext(Dispatchers.IO) {
                     dao.updateBookmarkState(currentMedicine.id, newState)

@@ -2,8 +2,12 @@ package com.example.rasaushadhies
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -12,12 +16,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import com.example.rasaushadhies.ui.screens.*
 import com.example.rasaushadhies.ui.theme.RasaushadhiTheme
 import com.example.rasaushadhies.ui.viewmodels.MedicineViewModel
@@ -38,7 +36,7 @@ object Routes {
 }
 
 @Composable
-fun RasaadarshApp(viewModel: MedicineViewModel = viewModel()) {
+fun RasaadarshApp(viewModel: MedicineViewModel) {
     val navController = rememberNavController()
     val allMedicines by viewModel.medicines.collectAsState()
     val isHindi by viewModel.isHindi.collectAsState()
@@ -46,16 +44,13 @@ fun RasaadarshApp(viewModel: MedicineViewModel = viewModel()) {
     val context = LocalContext.current
 
     RasaushadhiTheme {
-        Box(
-            modifier = Modifier.fillMaxSize()
+        androidx.compose.material3.Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
         ) {
             NavHost(
                 navController = navController,
-                startDestination = Routes.SPLASH,
-                enterTransition = { slideInHorizontally(animationSpec = tween(300)) { fullWidth -> fullWidth / 4 } + fadeIn(animationSpec = tween(300)) },
-                exitTransition = { fadeOut(animationSpec = tween(300)) },
-                popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-                popExitTransition = { slideOutHorizontally(animationSpec = tween(300)) { fullWidth -> fullWidth / 4 } + fadeOut(animationSpec = tween(300)) }
+                startDestination = Routes.SPLASH
             ) {
 
                 composable(Routes.SPLASH) {
@@ -150,78 +145,48 @@ fun RasaadarshApp(viewModel: MedicineViewModel = viewModel()) {
                             onBack   = { navController.popBackStack() },
                             onShare  = {
                                 try {
-                                    val shareText = if (isHindi) {
-                                        """
-                                            🌿 ${medicine.hindiName} (${medicine.name})
-                                            
-                                            📌 लाभ (Benefits):
-                                            ${medicine.benefits}
-                                            
-                                            🧪 घटक (Composition):
-                                            ${medicine.ingredients}
-                                            
-                                            💊 मात्रा एवं अनुपान (Dose):
-                                            ${medicine.dosage}
-                                            अनुपान: ${medicine.anupana}
-                                            
-                                            📋 निर्माण विधि (Preparation):
-                                            ${medicine.preparation}
-                                            
-                                            ⚠️ अस्वीकरण: शास्त्रीय ग्रंथों से संकलित सामग्री। केवल चिकित्सक की देखरेख में उपयोग करें।
-                                            
-                                            RASAADARSH App से साझा किया गया
-                                        """.trimIndent()
-                                    } else {
-                                        """
-                                            🌿 ${medicine.name} (${medicine.hindiName})
-                                            
-                                            📌 BENEFITS:
-                                            ${medicine.benefits}
-                                            
-                                            🧪 COMPOSITION:
-                                            ${medicine.ingredients}
-                                            
-                                            💊 DOSE & ANUPANA:
-                                            ${medicine.dosage}
-                                            Vehicle: ${medicine.anupana}
-                                            
-                                            📋 PREPARATION:
-                                            ${medicine.preparation}
-                                            
-                                            
-
-                                            ⚠️ Disclaimer: Classical Ayurvedic formulation. Must only be used under supervision of a qualified Physician.
-                                            
-                                            Shared from RASAADARSH App
-                                        """.trimIndent()
-                                    }
-                                    
-                                    val finalShareText = if (profile.isSetupComplete) {
-                                        val signature = if (isHindi) {
-                                            "\n\nप्रसारितकर्ता:\nडॉ. ${profile.name} (${profile.qualification})\n${profile.clinicName}\nRASAADARSH ऐप से साझा किया गया"
-                                        } else {
-                                            "\n\nShared by:\nDr. ${profile.name} (${profile.qualification})\n${profile.clinicName}\nShared from RASAADARSH App"
+                                    val medName = if (isHindi) medicine.hindiName else medicine.name
+                                    val shareContent = buildString {
+                                        append("🌿 $medName\n\n")
+                                        
+                                        if (medicine.shloka.isNotBlank()) {
+                                            append(if (isHindi) "📖 शास्त्रीय श्लोक:\n" else "📖 CLASSICAL SHLOKA:\n")
+                                            append(medicine.shloka)
+                                            append("\n\n")
                                         }
-                                        shareText.substringBefore("Shared from RASAADARSH App") + signature
-                                    } else {
-                                        shareText
+
+                                        append(if (isHindi) "📌 लाभ:\n" else "📌 BENEFITS:\n")
+                                        append(medicine.benefits)
+                                        append("\n\n")
+                                        append(if (isHindi) "🧪 घटक:\n" else "🧪 COMPOSITION:\n")
+                                        append(medicine.ingredients)
+                                        append("\n\n")
+                                        append(if (isHindi) "💊 मात्रा एवं अनुपान:\n" else "💊 DOSE & ANUPANA:\n")
+                                        append("${medicine.dosage}\n")
+                                        append(if (isHindi) "अनुपान: ${medicine.anupana}" else "Vehicle: ${medicine.anupana}")
+                                        append("\n\n")
+                                        append(if (isHindi) "📋 निर्माण विधि:\n" else "📋 PREPARATION:\n")
+                                        append(medicine.preparation)
+                                        append("\n\n")
+
+                                        if (profile.isSetupComplete) {
+                                            append(if (isHindi) "प्रसारितकर्ता:\n" else "Shared by:\n")
+                                            append("Dr. ${profile.name} (${profile.qualification})\n")
+                                            append("${profile.clinicName}\n\n")
+                                        }
+                                        append(if (isHindi) "RASAADARSH ऐप से साझा किया गया" else "Shared from RASAADARSH App")
                                     }
 
                                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                         type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, "RASAADARSH: ${if (isHindi) medicine.hindiName else medicine.name}")
-                                        putExtra(Intent.EXTRA_TEXT, finalShareText)
-                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                        putExtra(Intent.EXTRA_SUBJECT, "RASAADARSH: $medName")
+                                        putExtra(Intent.EXTRA_TEXT, shareContent)
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
                                     }
 
-                                    val chooser = Intent.createChooser(shareIntent, "Share Medicine").apply {
-                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                    }
-
-                                    context.startActivity(chooser)
-
+                                    context.startActivity(Intent.createChooser(shareIntent, "Share Medicine"))
                                 } catch (e: Exception) {
-                                    e.printStackTrace()
+                                    android.util.Log.e("Navigation", "Share error", e)
                                 }
                             },
                             onToggleBookmark = { viewModel.toggleBookmark(medicine.id) },

@@ -54,6 +54,7 @@ data class Medicine(
     val dosage: String,
     val anupana: String = "",
     val reference: String = "",
+    val shloka: String = "",
     val isBookmarked: Boolean = false,
     val clinicalNotes: String = "",
     

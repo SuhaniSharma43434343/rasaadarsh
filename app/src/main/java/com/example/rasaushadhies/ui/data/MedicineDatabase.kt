@@ -18,6 +18,8 @@ data class MedicineRecord(
     val dose: String,
     val preparation: String,
     val anupana: String,
+    val reference: String = "",
+    val shloka: String = "",
     val diseaseCategory: String = "Other",
     
     // Structured JSON Fields for Seeding

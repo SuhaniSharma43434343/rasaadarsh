@@ -20,30 +20,30 @@ val PrimaryDarkGreen: Color
 val AccentAmber: Color
     @Composable get() = if (isSystemInDarkTheme()) Color(0xFFD4AF37) else Color(0xFFD4AF37)
 val AccentAmberLight: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFFE5C158) else Color(0xFFE5C158)
+    @Composable get() = Color(0xFFE5C158)
 val SurfaceColor: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF121A15) else Color(0xFFFAFAF7)
+    @Composable get() = Color(0xFFFAFAF7)
 val SurfaceVariant: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF1E2D24) else Color(0xFFF0EDE6)
+    @Composable get() = Color(0xFFF0EDE6)
 val BackgroundColor: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF0D1410) else Color(0xFFF3F1EC)
+    @Composable get() = Color(0xFFF3F1EC)
 val OnSurface: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFFE5EBE7) else Color(0xFF1C1C1A)
+    @Composable get() = Color(0xFF1C1C1A)
 val Muted: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFFA0AFA5) else Color(0xFF757570)
+    @Composable get() = Color(0xFF757570)
 val DividerColor: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF2A3E31) else Color(0xFFE5E2DB)
+    @Composable get() = Color(0xFFE5E2DB)
 val CardBg: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF1A261D) else Color(0xFFFFFFFF)
+    @Composable get() = Color(0xFFFFFFFF)
 val White: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF1E2D24) else Color(0xFFFFFFFF)
+    @Composable get() = Color(0xFFFFFFFF)
 val TrueWhite: Color = Color(0xFFFFFFFF)
 val ChipBg: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF1B3525) else Color(0xFFEAF2EC)
+    @Composable get() = Color(0xFFEAF2EC)
 val ChipText: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF8CC2A0) else Color(0xFF2D5C3E)
+    @Composable get() = Color(0xFF2D5C3E)
 val TextPrimary: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFFE5EBE7) else Color(0xFF1C1C1A)
+    @Composable get() = Color(0xFF1C1C1A)
 
 // ─── Modern Gradient Brushes ─────────────────────────────────
 

@@ -15,6 +15,7 @@ data class MedicineEntity(
     val dosage: String,
     val anupana: String = "",
     val reference: String = "",
+    val shloka: String = "",
     val isBookmarked: Boolean = false,
     val clinicalNotes: String = "",
     val lastViewedTimestamp: Long = 0L,

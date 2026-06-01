@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ fun MedicineDetailScreen(
     onLanguageToggle: () -> Unit,
     medicine: Medicine,
     onBack: () -> Unit,
+    onShare: () -> Unit,
     onToggleBookmark: () -> Unit,
     onUpdateNotes: (Int, String) -> Unit
 ) {
@@ -42,6 +44,13 @@ fun MedicineDetailScreen(
                 isHindi = isHindi,
                 onLanguageToggle = onLanguageToggle,
                 actions = {
+                    IconButton(onClick = onShare) {
+                        Icon(
+                            imageVector = Icons.Outlined.Share,
+                            contentDescription = "Share",
+                            tint = White
+                        )
+                    }
                     IconButton(onClick = onToggleBookmark) {
                         Icon(
                             imageVector = if (medicine.isBookmarked) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
@@ -105,11 +114,6 @@ fun MedicineDetailScreen(
                     .padding(20.dp)
             ) {
 
-                // Clinical Safety Dashboard
-                // Clinical Safety Dashboard removed per user request
-
-                // Therapeutic Indication Chips removed per user request
-
                 // Text Size Adjuster
                 Row(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                     Text("Text Size:", style = MaterialTheme.typography.labelSmall, color = Muted)
@@ -128,7 +132,30 @@ fun MedicineDetailScreen(
                 PropertiesGrid(medicine.dosage, medicine.anupana, fontSizeMultiplier)
                 Spacer(Modifier.height(24.dp))
 
-                // Therapeutic Benefits (Bullet Points)
+                // Classical Shloka / Reference Section
+                if (medicine.shloka.isNotBlank()) {
+                    SectionLabel(text = "Classical Reference (Shloka)", modifier = Modifier.padding(bottom = 12.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                        colors = CardDefaults.cardColors(containerColor = CardBg),
+                        border = BorderStroke(1.dp, PrimaryGreen.copy(0.2f)),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = medicine.shloka,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                    color = PrimaryDarkGreen,
+                                    lineHeight = 22.sp,
+                                    fontSize = 15.sp * fontSizeMultiplier
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // Therapeutic Benefits
                 SectionLabel(text = "Therapeutic Range & Benefits", modifier = Modifier.padding(bottom = 12.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
@@ -141,19 +168,19 @@ fun MedicineDetailScreen(
                     }
                 }
 
-                // Ingredients Table (Structured)
+                // Ingredients Table
                 SectionLabel(text = "Ingredients (Ghatak Dravya)", modifier = Modifier.padding(bottom = 12.dp))
                 IngredientsTable(medicine.ingredientsList, medicine.ingredients, fontSizeMultiplier)
                 Spacer(Modifier.height(24.dp))
 
-                // Method of Preparation (Steps)
+                // Method of Preparation
                 SectionLabel(text = "Method of Preparation", modifier = Modifier.padding(bottom = 12.dp))
                 PreparationSteps(medicine.preparation, fontSizeMultiplier)
                 Spacer(Modifier.height(24.dp))
 
                 // Reference
                 if (medicine.reference.isNotBlank()) {
-                    SectionLabel(text = "Reference", modifier = Modifier.padding(bottom = 12.dp))
+                    SectionLabel(text = "Source Reference", modifier = Modifier.padding(bottom = 12.dp))
                     Card(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
                         colors = CardDefaults.cardColors(containerColor = White),
@@ -161,7 +188,7 @@ fun MedicineDetailScreen(
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(medicine.reference, style = MaterialTheme.typography.bodyLarge)
+                            Text(medicine.reference, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium, color = Muted))
                         }
                     }
                 }
@@ -189,7 +216,7 @@ fun MedicineDetailScreen(
                 Spacer(Modifier.height(32.dp))
 
                 // Actions
-                ActionButtons(medicine, onToggleBookmark)
+                ActionButtons(medicine, onToggleBookmark, onShare)
                 Spacer(Modifier.height(50.dp))
             }
         }
@@ -335,8 +362,8 @@ fun PreparationSteps(raw: String, fontSizeMultiplier: Float = 1f) {
 }
 
 @Composable
-fun ActionButtons(medicine: Medicine, onToggleBookmark: () -> Unit) {
-    Column {
+fun ActionButtons(medicine: Medicine, onToggleBookmark: () -> Unit, onShare: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Button(
             onClick = onToggleBookmark,
             shape = RoundedCornerShape(28.dp),
@@ -353,6 +380,20 @@ fun ActionButtons(medicine: Medicine, onToggleBookmark: () -> Unit) {
                     Spacer(Modifier.width(10.dp))
                     Text(if (medicine.isBookmarked) "Saved to Cabinet" else "Save to Cabinet", style = MaterialTheme.typography.titleLarge.copy(color = White, fontSize = 16.sp))
                 }
+            }
+        }
+
+        OutlinedButton(
+            onClick = onShare,
+            shape = RoundedCornerShape(28.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            border = BorderStroke(1.dp, PrimaryGreen),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(imageVector = Icons.Outlined.Share, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Text("Share with Patients", style = MaterialTheme.typography.titleLarge.copy(fontSize = 16.sp))
             }
         }
     }

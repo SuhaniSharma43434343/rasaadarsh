@@ -81,9 +81,11 @@ fun HomeScreen(
     }
 
     LaunchedEffect(Unit) {
+        android.util.Log.d("AppDebug", "HomeScreen LaunchedEffect started")
         visible = true
     }
 
+    android.util.Log.d("AppDebug", "HomeScreen drawing content")
     Scaffold(
         containerColor = BackgroundColor,
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -215,20 +217,14 @@ fun HomeScreen(
 
             // ── Main content with Topo BG ───────────────────────────────
             Box(modifier = Modifier.fillMaxSize()) {
-                // Topo Pattern Background
-                Image(
-                    painter = androidx.compose.ui.res.painterResource(id = com.example.rasaushadhies.R.drawable.topo_bg),
-                    contentDescription = null,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().alpha(0.6f)
-                )
+                // Removed Topo Pattern Background to prevent texture too large errors
 
                 Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
 
                     // Popular Diseases
                     Text(
                         text = "Browse by Disease",
-                        style = MaterialTheme.typography.titleMedium.copy(color = PrimaryDarkGreen, fontSize = 18.sp),
+                        style = MaterialTheme.typography.titleMedium.copy(color = TextPrimary, fontSize = 18.sp),
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
@@ -248,7 +244,7 @@ fun HomeScreen(
                     // Browse section (3D Widgets)
                     Text(
                         text = "Browse",
-                        style = MaterialTheme.typography.titleMedium.copy(color = PrimaryDarkGreen, fontSize = 18.sp),
+                        style = MaterialTheme.typography.titleMedium.copy(color = TextPrimary, fontSize = 18.sp),
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
@@ -341,7 +337,7 @@ fun HomeScreen(
                     if (recentMedicines.isNotEmpty()) {
                         Text(
                             text = "Recently Viewed",
-                            style = MaterialTheme.typography.titleMedium.copy(color = PrimaryDarkGreen, fontSize = 18.sp),
+                            style = MaterialTheme.typography.titleMedium.copy(color = TextPrimary, fontSize = 18.sp),
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
                         LazyRow(
@@ -352,7 +348,7 @@ fun HomeScreen(
                                 val med = recentMedicines[i]
                                 Card(
                                     shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = White),
+                                    colors = CardDefaults.cardColors(containerColor = CardBg),
                                     elevation = CardDefaults.cardElevation(8.dp),
                                     modifier = Modifier.width(160.dp).clickable { onSearch(med.name) }
                                 ) {
@@ -362,22 +358,22 @@ fun HomeScreen(
                                                 modifier = Modifier.size(36.dp).background(PrimaryGreen.copy(0.1f), CircleShape),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("${med.id}", color = PrimaryDarkGreen, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                                Text("${med.id}", color = TextPrimary, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
                                             }
                                             Column(horizontalAlignment = Alignment.End) {
-                                                Text("${med.id}", style = MaterialTheme.typography.titleSmall.copy(color = PrimaryDarkGreen, fontWeight = FontWeight.Bold))
+                                                Text("${med.id}", style = MaterialTheme.typography.titleSmall.copy(color = TextPrimary, fontWeight = FontWeight.Bold))
                                                 Text("Views", style = MaterialTheme.typography.labelSmall.copy(color = Muted, fontSize = 9.sp))
                                             }
                                         }
                                         Spacer(Modifier.height(12.dp))
-                                        Text(med.name, style = MaterialTheme.typography.titleSmall.copy(color = PrimaryDarkGreen), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                        Text(med.name, style = MaterialTheme.typography.titleSmall.copy(color = TextPrimary), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                         Text(med.hindiName, style = MaterialTheme.typography.labelSmall.copy(color = Muted), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                         Spacer(Modifier.height(12.dp))
                                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                             Text("🫙", fontSize = 24.sp)
                                             Spacer(Modifier.width(8.dp))
                                             Column(modifier = Modifier.weight(1f)) {
-                                                Text("Dosage ⭐", style = MaterialTheme.typography.labelSmall.copy(color = PrimaryDarkGreen, fontWeight = FontWeight.Bold))
+                                                Text("Dosage ⭐", style = MaterialTheme.typography.labelSmall.copy(color = TextPrimary, fontWeight = FontWeight.Bold))
                                                 val rating = (med.id % 5) + 1
                                                 Text("${rating}.5 views", style = MaterialTheme.typography.labelSmall.copy(color = Muted, fontSize = 9.sp))
                                             }
@@ -505,46 +501,7 @@ private fun AdvancedAiDashboard(onClick: () -> Unit) {
         Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             // Heartbeat & Orb
             Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
-                // Draw heartbeat wave using Canvas
-                val waveColor = AccentAmber.copy(0.4f)
-                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                    val path = androidx.compose.ui.graphics.Path().apply {
-                        val cy = size.height / 2
-                        val w = size.width
-                        val h = size.height
-                        
-                        // Left heartbeat (P-Q-R-S-T)
-                        moveTo(0f, cy)
-                        lineTo(w * 0.08f, cy)
-                        quadraticBezierTo(w * 0.11f, cy - h * 0.15f, w * 0.14f, cy) // P wave
-                        lineTo(w * 0.16f, cy + h * 0.08f) // Q wave
-                        lineTo(w * 0.21f, cy - h * 0.45f) // R wave
-                        lineTo(w * 0.26f, cy + h * 0.2f)  // S wave
-                        lineTo(w * 0.29f, cy)
-                        quadraticBezierTo(w * 0.34f, cy - h * 0.2f, w * 0.39f, cy)  // T wave
-                        lineTo(w * 0.45f, cy)
-                        
-                        // Right heartbeat (P-Q-R-S-T)
-                        moveTo(w * 0.55f, cy)
-                        lineTo(w * 0.63f, cy)
-                        quadraticBezierTo(w * 0.66f, cy - h * 0.15f, w * 0.69f, cy) // P wave
-                        lineTo(w * 0.71f, cy + h * 0.08f) // Q wave
-                        lineTo(w * 0.76f, cy - h * 0.45f) // R wave
-                        lineTo(w * 0.81f, cy + h * 0.2f)  // S wave
-                        lineTo(w * 0.84f, cy)
-                        quadraticBezierTo(w * 0.89f, cy - h * 0.2f, w * 0.94f, cy)  // T wave
-                        lineTo(w, cy)
-                    }
-                    drawPath(
-                        path = path, 
-                        color = waveColor, 
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(
-                            width = 4f, 
-                            cap = androidx.compose.ui.graphics.StrokeCap.Round, 
-                            join = androidx.compose.ui.graphics.StrokeJoin.Round
-                        )
-                    )
-                }
+                // Removed heartbeat wave to prevent potential SurfaceFlinger crashes on emulators
                 
                 Box(
                     contentAlignment = Alignment.Center,

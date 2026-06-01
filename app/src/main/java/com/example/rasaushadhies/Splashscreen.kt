@@ -31,32 +31,24 @@ fun SplashScreen(onSecurityResult: (String) -> Unit) {
     val prefs = remember { context.getSharedPreferences("practitioner_prefs", android.content.Context.MODE_PRIVATE) }
     val securityViewModel: SecurityViewModel = viewModel(factory = SecurityViewModelFactory(prefs))
     
-    var visible by remember { mutableStateOf(false) }
-    
-    val alpha by animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(durationMillis = 1000, easing = EaseInOutCirc),
-        label = "splash_alpha"
-    )
-
-    val scale by animateFloatAsState(
-        targetValue = if (visible) 1f else 0.8f,
-        animationSpec = tween(durationMillis = 1200, easing = EaseOutBack),
-        label = "splash_scale"
-    )
+    var visible by remember { mutableStateOf(true) }
+    val alpha = 1f
+    val scale = 1f
 
     LaunchedEffect(Unit) {
-        visible = true
-        delay(2500)
+        android.util.Log.d("AppDebug", "SplashScreen LaunchedEffect started")
+        delay(500)
         
         // Security Audit
         val status = securityViewModel.performSecurityAudit()
+        android.util.Log.d("AppDebug", "Security audit status: $status")
         val destination = when (status) {
             SecurityViewModel.SecurityState.VALID -> Routes.HOME
             SecurityViewModel.SecurityState.EXPIRED -> Routes.EXPIRED
             SecurityViewModel.SecurityState.TAMPERED -> Routes.TAMPERED
         }
         
+        android.util.Log.d("AppDebug", "Navigating to: $destination")
         onSecurityResult(destination)
     }
 
@@ -74,6 +66,7 @@ fun SplashScreen(onSecurityResult: (String) -> Unit) {
             ),
         contentAlignment = Alignment.Center
     ) {
+        android.util.Log.d("AppDebug", "SplashScreen drawing content")
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
