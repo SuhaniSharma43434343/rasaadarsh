@@ -13,6 +13,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
@@ -24,6 +27,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.rasaushadhies.ui.screens.Medicine
@@ -64,10 +69,14 @@ fun AiChatbotScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { context.getSharedPreferences("practitioner_prefs", android.content.Context.MODE_PRIVATE) }
 
     var inputText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var chatContext by remember { mutableStateOf(ChatContext()) }
+    var customApiKey by remember { mutableStateOf(prefs.getString("openrouter_api_key", "") ?: "") }
+    var showKeyDialog by remember { mutableStateOf(false) }
 
     val messages = remember {
         mutableStateListOf(
@@ -102,7 +111,8 @@ fun AiChatbotScreen(
                     allMedicines = allMedicines,
                     context = chatContext,
                     history = conversationHistory.toList(),
-                    onToggleBookmarkByName = onToggleBookmarkByName
+                    onToggleBookmarkByName = onToggleBookmarkByName,
+                    apiKey = customApiKey
                 )
             }
 
@@ -133,6 +143,11 @@ fun AiChatbotScreen(
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = White)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { showKeyDialog = true }) {
+                            Icon(Icons.Default.Key, contentDescription = "Configure API Key", tint = White)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
@@ -187,6 +202,77 @@ fun AiChatbotScreen(
             }
         }
     }
+
+    if (showKeyDialog) {
+        var tempKey by remember { mutableStateOf(customApiKey) }
+        var keyVisible by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { showKeyDialog = false },
+            title = {
+                Text(
+                    text = "Configure OpenRouter Key",
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    fontSize = 18.sp
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Paste your OpenRouter API key (sk-or-v1-...) below to enable or override the chatbot API credentials dynamically. If left blank, the app will fall back to the built-in key.",
+                        color = Muted,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    OutlinedTextField(
+                        value = tempKey,
+                        onValueChange = { tempKey = it },
+                        label = { Text("OpenRouter API Key") },
+                        singleLine = true,
+                        visualTransformation = if (keyVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { keyVisible = !keyVisible }) {
+                                Icon(
+                                    imageVector = if (keyVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = if (keyVisible) "Hide Key" else "Show Key",
+                                    tint = PrimaryGreen
+                                )
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = PrimaryGreen,
+                            focusedLabelColor = PrimaryGreen,
+                            cursorColor = PrimaryGreen
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        prefs.edit().putString("openrouter_api_key", tempKey.trim()).apply()
+                        customApiKey = tempKey.trim()
+                        showKeyDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+                ) {
+                    Text("Save", color = White)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showKeyDialog = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = PrimaryGreen)
+                ) {
+                    Text("Cancel")
+                }
+            },
+            containerColor = White,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 }
 
 private fun isAiIntent(q: String): Boolean {
@@ -205,7 +291,8 @@ private suspend fun resolveQuery(
     allMedicines: List<Medicine>,
     context: ChatContext,
     history: List<Pair<String, String>>,
-    onToggleBookmarkByName: (String) -> Unit
+    onToggleBookmarkByName: (String) -> Unit,
+    apiKey: String
 ): Triple<String, String, ChatContext> {
 
     val q = userText.trim().lowercase()
@@ -254,7 +341,7 @@ private suspend fun resolveQuery(
     } else {
         // 4. COMPLEX/HARD CASES -> AI Assistant
         // If DB is empty, or query is complex, or Comparison/Reasoning intent detected
-        val reply = callOpenRouterApi(userText, relevant, history)
+        val reply = callOpenRouterApi(userText, relevant, history, apiKey)
         
         // --- OFFLINE/ERROR FALLBACK ---
         if (reply.startsWith("⚠️") && relevant.isNotEmpty()) {
@@ -523,10 +610,11 @@ private fun buildSystemPrompt(relevantMedicines: List<Medicine>): String {
 private suspend fun callOpenRouterApi(
     userQuery: String,
     relevantMedicines: List<Medicine>,
-    history: List<Pair<String, String>>
+    history: List<Pair<String, String>>,
+    apiKey: String
 ): String = withContext(Dispatchers.IO) {
     try {
-        val apiKey = BuildConfig.OPENROUTER_API_KEY
+        val resolvedApiKey = if (apiKey.isNotBlank()) apiKey else BuildConfig.OPENROUTER_API_KEY
         val url = URL("https://openrouter.ai/api/v1/chat/completions")
         
         val messages = JSONArray()
@@ -552,7 +640,7 @@ private suspend fun callOpenRouterApi(
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             setRequestProperty("Content-Type", "application/json")
-            setRequestProperty("Authorization", "Bearer $apiKey")
+            setRequestProperty("Authorization", "Bearer $resolvedApiKey")
             setRequestProperty("HTTP-Referer", "https://rasaushadhies.com")
             setRequestProperty("X-Title", "RASAADARSH")
             doOutput = true

@@ -621,6 +621,7 @@ private fun AdvancedWidget(
 
 @Composable
 private fun AdvancedAiDashboard(onClick: () -> Unit) {
+    val accentAmberLight = AccentAmberLight
     val infiniteTransition = rememberInfiniteTransition(label = "aiAnimation")
     
     val orbScale by infiniteTransition.animateFloat(
@@ -704,7 +705,7 @@ private fun AdvancedAiDashboard(onClick: () -> Unit) {
                     
                     drawPath(
                         path = path,
-                        color = AccentAmberLight.copy(0.4f),
+                        color = accentAmberLight.copy(0.4f),
                         style = Stroke(width = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
                     )
                 }
