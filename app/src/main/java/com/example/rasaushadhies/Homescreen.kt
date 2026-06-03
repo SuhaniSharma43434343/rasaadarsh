@@ -254,13 +254,22 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(horizontal = 16.dp).fillMaxHeight()
                         ) {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = White)
-                            Spacer(Modifier.width(12.dp))
+                            IconButton(
+                                onClick = {
+                                    if (searchQuery.isNotBlank()) {
+                                        focusManager.clearFocus()
+                                        onSearch(searchQuery)
+                                    }
+                                }
+                            ) {
+                                Icon(Icons.Default.Search, contentDescription = "Search", tint = White)
+                            }
+                            Spacer(Modifier.width(4.dp))
                             TextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
                                 placeholder = {
-                                    Text("Search medicine or disease...", color = White.copy(0.7f), fontSize = 14.sp)
+                                    Text("Search medicine or disease...", color = White.copy(0.7f), fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                                 },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),

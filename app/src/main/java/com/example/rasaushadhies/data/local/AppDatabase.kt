@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [MedicineEntity::class], version = 24, exportSchema = false)
+@Database(entities = [MedicineEntity::class], version = 26, exportSchema = false)
 @TypeConverters(MedicineTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
 
