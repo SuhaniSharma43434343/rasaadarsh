@@ -35,6 +35,12 @@ object Routes {
     const val TAMPERED = "tampered"
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
+val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
+@OptIn(ExperimentalSharedTransitionApi::class)
+val LocalAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
+
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun RasaadarshApp(viewModel: MedicineViewModel) {
     val navController = rememberNavController()
@@ -48,20 +54,26 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            NavHost(
-                navController = navController,
-                startDestination = Routes.SPLASH
-            ) {
+            SharedTransitionLayout {
+                CompositionLocalProvider(
+                    LocalSharedTransitionScope provides this
+                ) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = Routes.SPLASH
+                    ) {
 
-                composable(Routes.SPLASH) {
-                    SplashScreen(
-                        onSecurityResult = { destination ->
-                            navController.navigate(destination) {
-                                popUpTo(Routes.SPLASH) { inclusive = true }
+                        composable(Routes.SPLASH) {
+                            CompositionLocalProvider(LocalAnimatedVisibilityScope provides this@composable) {
+                                SplashScreen(
+                                    onSecurityResult = { destination ->
+                                        navController.navigate(destination) {
+                                            popUpTo(Routes.SPLASH) { inclusive = true }
+                                        }
+                                    }
+                                )
                             }
                         }
-                    )
-                }
 
                 composable(Routes.EXPIRED) {
                     AccessExpiredScreen()
@@ -72,20 +84,22 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                 }
 
                 composable(Routes.HOME) {
-                    val recentMedicines by viewModel.recentMedicines.collectAsState()
-                    HomeScreen(
-                        isHindi        = isHindi,
-                        allMedicines   = allMedicines,
-                        recentMedicines = recentMedicines,
-                        onLanguageToggle = { viewModel.toggleLanguage() },
-                        onSearch       = { q -> navController.navigate("results/${Uri.encode(q)}") },
-                        onDiseaseClick = { d -> navController.navigate("results/${Uri.encode(d)}") },
-                        onAllMedicines = { navController.navigate(Routes.LIST) },
-                        onSaved        = { navController.navigate(Routes.SAVED) },
-                        onAiSearch     = { navController.navigate(Routes.CHAT) },
-                        onAbout        = { navController.navigate(Routes.ABOUT) },
-                        onProfile      = { navController.navigate(Routes.PROFILE) }
-                    )
+                    CompositionLocalProvider(LocalAnimatedVisibilityScope provides this@composable) {
+                        val recentMedicines by viewModel.recentMedicines.collectAsState()
+                        HomeScreen(
+                            isHindi        = isHindi,
+                            allMedicines   = allMedicines,
+                            recentMedicines = recentMedicines,
+                            onLanguageToggle = { viewModel.toggleLanguage() },
+                            onSearch       = { q -> navController.navigate("results/${Uri.encode(q)}") },
+                            onDiseaseClick = { d -> navController.navigate("results/${Uri.encode(d)}") },
+                            onAllMedicines = { navController.navigate(Routes.LIST) },
+                            onSaved        = { navController.navigate(Routes.SAVED) },
+                            onAiSearch     = { navController.navigate(Routes.CHAT) },
+                            onAbout        = { navController.navigate(Routes.ABOUT) },
+                            onProfile      = { navController.navigate(Routes.PROFILE) }
+                        )
+                    }
                 }
 
                 composable(Routes.SEARCH) {
@@ -130,70 +144,72 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                     route = Routes.DETAIL,
                     arguments = listOf(navArgument("medicineId") { type = NavType.IntType })
                 ) { backStackEntry ->
-                    val id = backStackEntry.arguments?.getInt("medicineId") ?: -1
-                    val medicine = allMedicines.find { it.id == id }
+                    CompositionLocalProvider(LocalAnimatedVisibilityScope provides this@composable) {
+                        val id = backStackEntry.arguments?.getInt("medicineId") ?: -1
+                        val medicine = allMedicines.find { it.id == id }
 
-                    if (medicine != null) {
-                        LaunchedEffect(id) {
-                            viewModel.markAsViewed(id)
-                        }
+                        if (medicine != null) {
+                            LaunchedEffect(id) {
+                                viewModel.markAsViewed(id)
+                            }
 
-                        MedicineDetailScreen(
-                            isHindi  = isHindi,
-                            onLanguageToggle = { viewModel.toggleLanguage() },
-                            medicine = medicine,
-                            onBack   = { navController.popBackStack() },
-                            onShare  = {
-                                try {
-                                    val medName = if (isHindi) medicine.hindiName else medicine.name
-                                    val shareContent = buildString {
-                                        append("🌿 $medName\n\n")
-                                        
-                                        if (medicine.shloka.isNotBlank()) {
-                                            append(if (isHindi) "📖 शास्त्रीय श्लोक:\n" else "📖 CLASSICAL SHLOKA:\n")
-                                            append(medicine.shloka)
+                            MedicineDetailScreen(
+                                isHindi  = isHindi,
+                                onLanguageToggle = { viewModel.toggleLanguage() },
+                                medicine = medicine,
+                                onBack   = { navController.popBackStack() },
+                                onShare  = {
+                                    try {
+                                        val medName = if (isHindi) medicine.hindiName else medicine.name
+                                        val shareContent = buildString {
+                                            append("🌿 $medName\n\n")
+                                            
+                                            if (medicine.shloka.isNotBlank()) {
+                                                append(if (isHindi) "📖 शास्त्रीय श्लोक:\n" else "📖 CLASSICAL SHLOKA:\n")
+                                                append(medicine.shloka)
+                                                append("\n\n")
+                                            }
+
+                                            append(if (isHindi) "📌 लाभ:\n" else "📌 BENEFITS:\n")
+                                            append(medicine.benefits)
                                             append("\n\n")
+                                            append(if (isHindi) "🧪 घटक:\n" else "🧪 COMPOSITION:\n")
+                                            append(medicine.ingredients)
+                                            append("\n\n")
+                                            append(if (isHindi) "💊 मात्रा एवं अनुपान:\n" else "💊 DOSE & ANUPANA:\n")
+                                            append("${medicine.dosage}\n")
+                                            append(if (isHindi) "अनुपान: ${medicine.anupana}" else "Vehicle: ${medicine.anupana}")
+                                            append("\n\n")
+                                            append(if (isHindi) "📋 निर्माण विधि:\n" else "📋 PREPARATION:\n")
+                                            append(medicine.preparation)
+                                            append("\n\n")
+
+                                            if (profile.isSetupComplete) {
+                                                append(if (isHindi) "प्रसारितकर्ता:\n" else "Shared by:\n")
+                                                append("Dr. ${profile.name} (${profile.qualification})\n")
+                                                append("${profile.clinicName}\n\n")
+                                            }
+                                            append(if (isHindi) "RASAADARSH ऐप से साझा किया गया" else "Shared from RASAADARSH App")
                                         }
 
-                                        append(if (isHindi) "📌 लाभ:\n" else "📌 BENEFITS:\n")
-                                        append(medicine.benefits)
-                                        append("\n\n")
-                                        append(if (isHindi) "🧪 घटक:\n" else "🧪 COMPOSITION:\n")
-                                        append(medicine.ingredients)
-                                        append("\n\n")
-                                        append(if (isHindi) "💊 मात्रा एवं अनुपान:\n" else "💊 DOSE & ANUPANA:\n")
-                                        append("${medicine.dosage}\n")
-                                        append(if (isHindi) "अनुपान: ${medicine.anupana}" else "Vehicle: ${medicine.anupana}")
-                                        append("\n\n")
-                                        append(if (isHindi) "📋 निर्माण विधि:\n" else "📋 PREPARATION:\n")
-                                        append(medicine.preparation)
-                                        append("\n\n")
-
-                                        if (profile.isSetupComplete) {
-                                            append(if (isHindi) "प्रसारितकर्ता:\n" else "Shared by:\n")
-                                            append("Dr. ${profile.name} (${profile.qualification})\n")
-                                            append("${profile.clinicName}\n\n")
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(Intent.EXTRA_SUBJECT, "RASAADARSH: $medName")
+                                            putExtra(Intent.EXTRA_TEXT, shareContent)
+                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
                                         }
-                                        append(if (isHindi) "RASAADARSH ऐप से साझा किया गया" else "Shared from RASAADARSH App")
-                                    }
 
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, "RASAADARSH: $medName")
-                                        putExtra(Intent.EXTRA_TEXT, shareContent)
-                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                        context.startActivity(Intent.createChooser(shareIntent, "Share Medicine"))
+                                    } catch (e: Exception) {
+                                        android.util.Log.e("Navigation", "Share error", e)
                                     }
-
-                                    context.startActivity(Intent.createChooser(shareIntent, "Share Medicine"))
-                                } catch (e: Exception) {
-                                    android.util.Log.e("Navigation", "Share error", e)
-                                }
-                            },
-                            onToggleBookmark = { viewModel.toggleBookmark(medicine.id) },
-                            onUpdateNotes = { mid, text -> viewModel.updateClinicalNotes(mid, text) }
-                        )
-                    } else {
-                        LaunchedEffect(Unit) { navController.popBackStack() }
+                                },
+                                onToggleBookmark = { viewModel.toggleBookmark(medicine.id) },
+                                onUpdateNotes = { mid, text -> viewModel.updateClinicalNotes(mid, text) }
+                            )
+                        } else {
+                            LaunchedEffect(Unit) { navController.popBackStack() }
+                        }
                     }
                 }
 
@@ -234,5 +250,8 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                 }
             }
         }
+        }
+        }
     }
 }
+

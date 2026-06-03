@@ -1,5 +1,7 @@
 package com.example.rasaushadhies.ui.screens
 
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import android.content.Intent
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -40,9 +42,9 @@ import androidx.compose.ui.unit.sp
 import com.example.rasaushadhies.ui.components.DiseaseChip
 import com.example.rasaushadhies.ui.theme.*
 
-// ─────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────
 //  SCREEN 2 — Home Screen
-// ─────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────
 
 @Composable
 fun Modifier.bounceClick(onClick: () -> Unit) = this.composed {
@@ -87,7 +89,7 @@ private val popularDiseases = listOf(
     Pair("Shwas Hikka", "🫁")
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 fun HomeScreen(
     isHindi: Boolean,
@@ -185,12 +187,19 @@ fun HomeScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = innerPadding.calculateBottomPadding())
-        ) {
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        val parallaxOffset = if (listState.firstVisibleItemIndex == 0) listState.firstVisibleItemScrollOffset * 0.5f else 0f
+        
+        var isSearchFocused by remember { mutableStateOf(false) }
+        
+        Box(modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding())) {
+            AnimatedParticlesBackground()
+            
+            androidx.compose.foundation.lazy.LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                item {
 
             // ── Top Hero Area (Solid Green) ────────────
             Box(
@@ -198,6 +207,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .alpha(heroAlpha)
                     .offset(y = heroSlide)
+                    .graphicsLayer { translationY = parallaxOffset }
                     .background(PrimaryDarkGreen) 
                     .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
@@ -220,7 +230,7 @@ fun HomeScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = onLanguageToggle) {
                                 Text(
-                                    text = if (isHindi) "EN | हिन्दी" else "EN | हिन्दी",
+                                    text = if (isHindi) "EN | हिंदी" else "EN | हिंदी",
                                     color = AccentAmberLight,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 14.sp
@@ -240,15 +250,35 @@ fun HomeScreen(
 
                     Spacer(Modifier.height(24.dp))
 
+                    val searchWidth by animateFloatAsState(targetValue = if (isSearchFocused) 1f else 0.9f, label = "searchWidth")
+                    val glowInfinite = rememberInfiniteTransition(label = "glow")
+                    val glowAngle by glowInfinite.animateFloat(
+                        initialValue = 0f, targetValue = 360f,
+                        animationSpec = infiniteRepeatable(tween(2000, easing = LinearEasing), RepeatMode.Restart), label = "glowAngle"
+                    )
+                    
+                    val borderBrush = if (isSearchFocused) {
+                        androidx.compose.ui.graphics.Brush.sweepGradient(
+                            colors = listOf(AccentAmber, PrimaryDarkGreen, White, AccentAmber),
+                            center = androidx.compose.ui.geometry.Offset.Unspecified
+                        )
+                    } else {
+                        androidx.compose.ui.graphics.Brush.verticalGradient(listOf(White.copy(0.5f), Color.Transparent))
+                    }
+
                     // Glassmorphic Search bar
                     Card(
                         shape = RoundedCornerShape(24.dp),
-                        elevation = CardDefaults.cardElevation(0.dp),
+                        elevation = CardDefaults.cardElevation(if (isSearchFocused) 8.dp else 0.dp),
                         colors = CardDefaults.cardColors(containerColor = White.copy(0.15f)),
-                        border = BorderStroke(1.dp, androidx.compose.ui.graphics.Brush.verticalGradient(listOf(White.copy(0.5f), Color.Transparent))),
+                        border = BorderStroke(if (isSearchFocused) 2.dp else 1.dp, borderBrush),
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxWidth(searchWidth)
+                            .align(Alignment.CenterHorizontally)
                             .height(60.dp)
+                            .graphicsLayer {
+                                if (isSearchFocused) rotationZ = glowAngle * 0.0001f // subtle rotation trigger
+                            }
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -280,7 +310,7 @@ fun HomeScreen(
                                     focusedTextColor = White,
                                     unfocusedTextColor = White
                                 ),
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f).onFocusChanged { isSearchFocused = it.isFocused }
                             )
                             IconButton(
                                 onClick = {
@@ -311,6 +341,9 @@ fun HomeScreen(
                 }
             }
 
+                } // End of top hero item
+
+                item {
             // ── Main content with Topo BG ───────────────────────────────
             Box(modifier = Modifier.fillMaxSize()) {
                 // Removed Topo Pattern Background to prevent texture too large errors
@@ -439,29 +472,58 @@ fun HomeScreen(
                         )
                     }
 
+                    // Advanced AI Dashboard
+                    Box(
+                        modifier = Modifier
+                            .alpha(aiAlpha)
+                            .offset(y = aiSlide)
+                    ) {
+                        AdvancedAiDashboard(onClick = onAiSearch)
+                    }
+                    
+                    Spacer(Modifier.height(32.dp))
+
                     // Recently Viewed
-                    if (recentMedicines.isNotEmpty()) {
-                        Column(
-                            modifier = Modifier
-                                .alpha(recentAlpha)
-                                .offset(x = recentSlide)
+                    Column(
+                        modifier = Modifier
+                            .alpha(recentAlpha)
+                            .offset(x = recentSlide)
+                    ) {
+                        Text(
+                            text = "Recently Viewed",
+                            style = MaterialTheme.typography.titleMedium.copy(color = TextPrimary, fontSize = 18.sp),
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(bottom = 32.dp)
                         ) {
-                            Text(
-                                text = "Recently Viewed",
-                                style = MaterialTheme.typography.titleMedium.copy(color = TextPrimary, fontSize = 18.sp),
-                                modifier = Modifier.padding(bottom = 12.dp)
-                            )
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                modifier = Modifier.padding(bottom = 32.dp)
-                            ) {
+                            if (recentMedicines.isEmpty()) {
+                                items(3) {
+                                    ShimmerCard()
+                                }
+                            } else {
                                 items(recentMedicines.size) { i ->
                                     val med = recentMedicines[i]
+                                    val sharedTransitionScope = com.example.rasaushadhies.LocalSharedTransitionScope.current
+                                    val animatedVisibilityScope = com.example.rasaushadhies.LocalAnimatedVisibilityScope.current
+                                    
+                                    val sharedMod = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                                        with(sharedTransitionScope) {
+                                            Modifier.sharedElement(
+                                                state = rememberSharedContentState(key = "med_card_${med.id}"),
+                                                animatedVisibilityScope = animatedVisibilityScope
+                                            )
+                                        }
+                                    } else {
+                                        Modifier
+                                    }
+
                                     Card(
                                         shape = RoundedCornerShape(16.dp),
                                         colors = CardDefaults.cardColors(containerColor = CardBg),
                                         elevation = CardDefaults.cardElevation(8.dp),
-                                        modifier = Modifier.width(160.dp).bounceClick { onSearch(med.name) }
+                                        modifier = Modifier.width(160.dp).then(sharedMod).bounceClick { onSearch(med.name) }
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -501,36 +563,55 @@ fun HomeScreen(
                             }
                         }
                     }
-
-                    // Advanced AI Dashboard
-                    Box(
-                        modifier = Modifier
-                            .alpha(aiAlpha)
-                            .offset(y = aiSlide)
-                    ) {
-                        AdvancedAiDashboard(onClick = onAiSearch)
-                    }
                     
                     Spacer(Modifier.height(100.dp))
                 }
             }
-        }
+                } // End of main content item
+            } // End of LazyColumn
+        } // End of main Box
     }
 }
 
 @Composable
 fun DarkDiseaseChip(label: String, emoji: String, onClick: () -> Unit) {
+    var isFlipped by remember { mutableStateOf(false) }
+    val rotationY by animateFloatAsState(targetValue = if (isFlipped) 180f else 0f, label = "flip")
+
     Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = PrimaryDarkGreen),
         border = BorderStroke(1.dp, White.copy(0.1f)),
         elevation = CardDefaults.cardElevation(4.dp),
-        modifier = Modifier.bounceClick(onClick)
+        modifier = Modifier
+            .graphicsLayer {
+                this.rotationY = rotationY
+                cameraDistance = 12f * density
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onClick() },
+                    onLongPress = { isFlipped = !isFlipped }
+                )
+            }
     ) {
-        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(emoji, fontSize = 18.sp)
-            Spacer(Modifier.width(8.dp))
-            Text(label, color = White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+        if (rotationY <= 90f) {
+            Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(emoji, fontSize = 18.sp)
+                Spacer(Modifier.width(8.dp))
+                Text(label, color = White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .graphicsLayer { this.rotationY = 180f },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Star, contentDescription = null, tint = AccentAmber, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Saved!", color = AccentAmberLight, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+            }
         }
     }
 }
@@ -729,6 +810,97 @@ private fun AdvancedAiDashboard(onClick: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             Text("Your Ayurvedic Health Companion:", style = MaterialTheme.typography.titleMedium.copy(color = White, fontWeight = FontWeight.Bold))
             Text("Ask me about dosage or interactions", style = MaterialTheme.typography.bodySmall.copy(color = Muted))
+        }
+    }
+}
+
+@Composable
+fun AnimatedParticlesBackground() {
+    val infiniteTransition = rememberInfiniteTransition(label = "particles")
+    val phase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(20000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "phase"
+    )
+
+    val particleColor = PrimaryDarkGreen.copy(alpha = 0.15f)
+    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize().background(BackgroundColor)) {
+        val width = size.width
+        val height = size.height
+        val particleCount = 20
+
+        for (i in 0 until particleCount) {
+            val startX = (i * 143 % width)
+            val startY = (i * 321 % height)
+            val speed = (i % 3) + 1f
+            val radius = (i % 4) + 2f
+
+            val currentY = (startY - (phase * height * speed)) % height
+            val actualY = if (currentY < 0) currentY + height else currentY
+            
+            val drift = Math.sin((phase * 2 * Math.PI) + i).toFloat() * 20f
+
+            drawCircle(
+                color = particleColor,
+                radius = radius,
+                center = androidx.compose.ui.geometry.Offset(startX + drift.toFloat(), actualY)
+            )
+        }
+    }
+}
+@Composable
+fun ShimmerCard() {
+    val shimmerColors = listOf(
+        White.copy(alpha = 0.6f),
+        White.copy(alpha = 0.2f),
+        White.copy(alpha = 0.6f)
+    )
+    
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmerTranslate"
+    )
+    
+    val brush = androidx.compose.ui.graphics.Brush.linearGradient(
+        colors = shimmerColors,
+        start = androidx.compose.ui.geometry.Offset.Zero,
+        end = androidx.compose.ui.geometry.Offset(x = translateAnim, y = translateAnim)
+    )
+    
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardBg),
+        elevation = CardDefaults.cardElevation(2.dp),
+        modifier = Modifier.width(160.dp).height(140.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp).fillMaxSize()) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Box(modifier = Modifier.size(36.dp).background(brush, CircleShape))
+                Box(modifier = Modifier.width(40.dp).height(12.dp).background(brush, RoundedCornerShape(4.dp)))
+            }
+            Spacer(Modifier.height(16.dp))
+            Box(modifier = Modifier.fillMaxWidth().height(14.dp).background(brush, RoundedCornerShape(4.dp)))
+            Spacer(Modifier.height(8.dp))
+            Box(modifier = Modifier.fillMaxWidth(0.6f).height(10.dp).background(brush, RoundedCornerShape(4.dp)))
+            Spacer(Modifier.weight(1f))
+            Row {
+                Box(modifier = Modifier.size(24.dp).background(brush, CircleShape))
+                Spacer(Modifier.width(8.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box(modifier = Modifier.width(40.dp).height(10.dp).background(brush, RoundedCornerShape(4.dp)))
+                    Box(modifier = Modifier.width(30.dp).height(8.dp).background(brush, RoundedCornerShape(4.dp)))
+                }
+            }
         }
     }
 }
