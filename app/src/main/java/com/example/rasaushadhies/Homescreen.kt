@@ -4,13 +4,17 @@ import android.content.Intent
 import android.speech.RecognizerIntent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -20,8 +24,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -33,6 +43,34 @@ import com.example.rasaushadhies.ui.theme.*
 // ─────────────────────────────────────────────────────────────
 //  SCREEN 2 — Home Screen
 // ─────────────────────────────────────────────────────────────
+
+@Composable
+fun Modifier.bounceClick(onClick: () -> Unit) = this.composed {
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "scale"
+    )
+    this
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+        .pointerInput(Unit) {
+            detectTapGestures(
+                onPress = {
+                    isPressed = true
+                    try {
+                        awaitRelease()
+                    } finally {
+                        isPressed = false
+                    }
+                },
+                onTap = { onClick() }
+            )
+        }
+}
 
 private val popularDiseases = listOf(
     Pair("Aamvata", "✋"),
@@ -68,6 +106,62 @@ fun HomeScreen(
     var visible by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
+    // Staggered Entrance Animations state offsets and values
+    val heroAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = 600, delayMillis = 0, easing = LinearOutSlowInEasing),
+        label = "heroAlpha"
+    )
+    val heroSlide by animateDpAsState(
+        targetValue = if (visible) 0.dp else (-40).dp,
+        animationSpec = tween(durationMillis = 600, delayMillis = 0, easing = LinearOutSlowInEasing),
+        label = "heroSlide"
+    )
+
+    val chipAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = 600, delayMillis = 150, easing = LinearOutSlowInEasing),
+        label = "chipAlpha"
+    )
+    val chipSlide by animateDpAsState(
+        targetValue = if (visible) 0.dp else 40.dp,
+        animationSpec = tween(durationMillis = 600, delayMillis = 150, easing = LinearOutSlowInEasing),
+        label = "chipSlide"
+    )
+
+    val browseAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = 600, delayMillis = 300, easing = LinearOutSlowInEasing),
+        label = "browseAlpha"
+    )
+    val browseScale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0.85f,
+        animationSpec = tween(durationMillis = 600, delayMillis = 300, easing = LinearOutSlowInEasing),
+        label = "browseScale"
+    )
+
+    val recentAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = 600, delayMillis = 450, easing = LinearOutSlowInEasing),
+        label = "recentAlpha"
+    )
+    val recentSlide by animateDpAsState(
+        targetValue = if (visible) 0.dp else 40.dp,
+        animationSpec = tween(durationMillis = 600, delayMillis = 450, easing = LinearOutSlowInEasing),
+        label = "recentSlide"
+    )
+
+    val aiAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(durationMillis = 600, delayMillis = 600, easing = LinearOutSlowInEasing),
+        label = "aiAlpha"
+    )
+    val aiSlide by animateDpAsState(
+        targetValue = if (visible) 0.dp else 40.dp,
+        animationSpec = tween(durationMillis = 600, delayMillis = 600, easing = LinearOutSlowInEasing),
+        label = "aiSlide"
+    )
+
     val voiceLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -102,6 +196,8 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .alpha(heroAlpha)
+                    .offset(y = heroSlide)
                     .background(PrimaryDarkGreen) 
                     .padding(horizontal = 20.dp, vertical = 24.dp)
             ) {
@@ -230,7 +326,10 @@ fun HomeScreen(
 
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(bottom = 28.dp)
+                        modifier = Modifier
+                            .alpha(chipAlpha)
+                            .offset(x = chipSlide)
+                            .padding(bottom = 28.dp)
                     ) {
                         items(popularDiseases.size) { i ->
                             DarkDiseaseChip(
@@ -250,7 +349,14 @@ fun HomeScreen(
 
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(15.dp),
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .alpha(browseAlpha)
+                            .graphicsLayer {
+                                scaleX = browseScale
+                                scaleY = browseScale
+                            }
+                            .padding(bottom = 32.dp)
                     ) {
                         val uniqueCategories = allMedicines.map { it.diseaseCategory }.distinct().filter { it != "Other" && it.isNotBlank() }
                         val chipsList = uniqueCategories.take(3).ifEmpty { listOf("Ayurvedic", "Bhasma", "Ras") }
@@ -335,54 +441,60 @@ fun HomeScreen(
 
                     // Recently Viewed
                     if (recentMedicines.isNotEmpty()) {
-                        Text(
-                            text = "Recently Viewed",
-                            style = MaterialTheme.typography.titleMedium.copy(color = TextPrimary, fontSize = 18.sp),
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier.padding(bottom = 32.dp)
+                        Column(
+                            modifier = Modifier
+                                .alpha(recentAlpha)
+                                .offset(x = recentSlide)
                         ) {
-                            items(recentMedicines.size) { i ->
-                                val med = recentMedicines[i]
-                                Card(
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = CardDefaults.cardColors(containerColor = CardBg),
-                                    elevation = CardDefaults.cardElevation(8.dp),
-                                    modifier = Modifier.width(160.dp).clickable { onSearch(med.name) }
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                            Box(
-                                                modifier = Modifier.size(36.dp).background(PrimaryGreen.copy(0.1f), CircleShape),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text("${med.id}", color = TextPrimary, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                            Text(
+                                text = "Recently Viewed",
+                                style = MaterialTheme.typography.titleMedium.copy(color = TextPrimary, fontSize = 18.sp),
+                                modifier = Modifier.padding(bottom = 12.dp)
+                            )
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.padding(bottom = 32.dp)
+                            ) {
+                                items(recentMedicines.size) { i ->
+                                    val med = recentMedicines[i]
+                                    Card(
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = CardDefaults.cardColors(containerColor = CardBg),
+                                        elevation = CardDefaults.cardElevation(8.dp),
+                                        modifier = Modifier.width(160.dp).bounceClick { onSearch(med.name) }
+                                    ) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                Box(
+                                                    modifier = Modifier.size(36.dp).background(PrimaryGreen.copy(0.1f), CircleShape),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text("${med.id}", color = TextPrimary, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                                }
+                                                Column(horizontalAlignment = Alignment.End) {
+                                                    Text("${med.id}", style = MaterialTheme.typography.titleSmall.copy(color = TextPrimary, fontWeight = FontWeight.Bold))
+                                                    Text("Views", style = MaterialTheme.typography.labelSmall.copy(color = Muted, fontSize = 9.sp))
+                                                }
                                             }
-                                            Column(horizontalAlignment = Alignment.End) {
-                                                Text("${med.id}", style = MaterialTheme.typography.titleSmall.copy(color = TextPrimary, fontWeight = FontWeight.Bold))
-                                                Text("Views", style = MaterialTheme.typography.labelSmall.copy(color = Muted, fontSize = 9.sp))
+                                            Spacer(Modifier.height(12.dp))
+                                            Text(med.name, style = MaterialTheme.typography.titleSmall.copy(color = TextPrimary), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                            Text(med.hindiName, style = MaterialTheme.typography.labelSmall.copy(color = Muted), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                            Spacer(Modifier.height(12.dp))
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                                Text("🫙", fontSize = 24.sp)
+                                                Spacer(Modifier.width(8.dp))
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text("Dosage ⭐", style = MaterialTheme.typography.labelSmall.copy(color = TextPrimary, fontWeight = FontWeight.Bold))
+                                                    val rating = (med.id % 5) + 1
+                                                    Text("${rating}.5 views", style = MaterialTheme.typography.labelSmall.copy(color = Muted, fontSize = 9.sp))
+                                                }
+                                                Icon(
+                                                    imageVector = if (med.isBookmarked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, 
+                                                    contentDescription = null, 
+                                                    tint = Color(0xFFD32F2F), 
+                                                    modifier = Modifier.size(16.dp)
+                                                )
                                             }
-                                        }
-                                        Spacer(Modifier.height(12.dp))
-                                        Text(med.name, style = MaterialTheme.typography.titleSmall.copy(color = TextPrimary), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                                        Text(med.hindiName, style = MaterialTheme.typography.labelSmall.copy(color = Muted), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                                        Spacer(Modifier.height(12.dp))
-                                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                                            Text("🫙", fontSize = 24.sp)
-                                            Spacer(Modifier.width(8.dp))
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text("Dosage ⭐", style = MaterialTheme.typography.labelSmall.copy(color = TextPrimary, fontWeight = FontWeight.Bold))
-                                                val rating = (med.id % 5) + 1
-                                                Text("${rating}.5 views", style = MaterialTheme.typography.labelSmall.copy(color = Muted, fontSize = 9.sp))
-                                            }
-                                            Icon(
-                                                imageVector = if (med.isBookmarked) Icons.Default.Favorite else Icons.Default.FavoriteBorder, 
-                                                contentDescription = null, 
-                                                tint = Color(0xFFD32F2F), 
-                                                modifier = Modifier.size(16.dp)
-                                            )
                                         }
                                     }
                                 }
@@ -391,7 +503,13 @@ fun HomeScreen(
                     }
 
                     // Advanced AI Dashboard
-                    AdvancedAiDashboard(onClick = onAiSearch)
+                    Box(
+                        modifier = Modifier
+                            .alpha(aiAlpha)
+                            .offset(y = aiSlide)
+                    ) {
+                        AdvancedAiDashboard(onClick = onAiSearch)
+                    }
                     
                     Spacer(Modifier.height(100.dp))
                 }
@@ -407,7 +525,7 @@ fun DarkDiseaseChip(label: String, emoji: String, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = PrimaryDarkGreen),
         border = BorderStroke(1.dp, White.copy(0.1f)),
         elevation = CardDefaults.cardElevation(4.dp),
-        modifier = Modifier.clickable(onClick = onClick)
+        modifier = Modifier.bounceClick(onClick)
     ) {
         Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(emoji, fontSize = 18.sp)
@@ -428,10 +546,21 @@ private fun AdvancedWidget(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "bobbing")
+    val bobbingOffset by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2000 + (imageRes % 3) * 200, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bobbingOffset"
+    )
+
     Card(
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(8.dp),
-        modifier = modifier.fillMaxWidth().height(180.dp).clickable(onClick = onClick)
+        modifier = modifier.fillMaxWidth().height(180.dp).bounceClick(onClick)
     ) {
         Column(modifier = Modifier.fillMaxSize().background(bgBrush)) {
             Row(
@@ -457,6 +586,7 @@ private fun AdvancedWidget(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .offset(y = bobbingOffset.dp)
                     .padding(horizontal = 8.dp).padding(bottom = 8.dp)
             ) {
                 Column {
@@ -491,24 +621,105 @@ private fun AdvancedWidget(
 
 @Composable
 private fun AdvancedAiDashboard(onClick: () -> Unit) {
+    val infiniteTransition = rememberInfiniteTransition(label = "aiAnimation")
+    
+    val orbScale by infiniteTransition.animateFloat(
+        initialValue = 0.92f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "orbScale"
+    )
+
+    val ecgPhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "ecgPhase"
+    )
+
     Card(
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(12.dp),
         colors = CardDefaults.cardColors(containerColor = PrimaryDarkGreen),
         border = BorderStroke(1.dp, PrimaryGreen.copy(0.3f)),
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+        modifier = Modifier.fillMaxWidth().bounceClick(onClick)
     ) {
         Column(modifier = Modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            // Heartbeat & Orb
             Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
-                // Removed heartbeat wave to prevent potential SurfaceFlinger crashes on emulators
+                androidx.compose.foundation.Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                ) {
+                    val width = size.width
+                    val height = size.height
+                    val centerY = height / 2f
+                    
+                    val path = Path()
+                    path.moveTo(0f, centerY)
+                    
+                    val points = 200
+                    for (i in 0..points) {
+                        val x = (i.toFloat() / points) * width
+                        val normalizedX = (x / width + ecgPhase) % 1.0f
+                        
+                        val yOffset = when {
+                            normalizedX in 0.4f..0.46f -> {
+                                val p = (normalizedX - 0.4f) / 0.06f
+                                Math.sin(p * Math.PI).toFloat() * -10f
+                            }
+                            normalizedX in 0.47f..0.49f -> {
+                                val p = (normalizedX - 0.47f) / 0.02f
+                                p * 8f
+                            }
+                            normalizedX in 0.49f..0.52f -> {
+                                val p = (normalizedX - 0.49f) / 0.03f
+                                if (p < 0.5f) {
+                                    val p1 = p / 0.5f
+                                    8f - (p1 * 48f)
+                                } else {
+                                    val p2 = (p - 0.5f) / 0.5f
+                                    -48f + (p2 * 73f)
+                                }
+                            }
+                            normalizedX in 0.52f..0.55f -> {
+                                val p = (normalizedX - 0.52f) / 0.03f
+                                25f - (p * 25f)
+                            }
+                            normalizedX in 0.57f..0.66f -> {
+                                val p = (normalizedX - 0.57f) / 0.09f
+                                Math.sin(p * Math.PI).toFloat() * -15f
+                            }
+                            else -> 0f
+                        }
+                        
+                        path.lineTo(x, centerY + yOffset)
+                    }
+                    
+                    drawPath(
+                        path = path,
+                        color = AccentAmberLight.copy(0.4f),
+                        style = Stroke(width = 3.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                    )
+                }
                 
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(64.dp)
+                        .graphicsLayer {
+                            scaleX = orbScale
+                            scaleY = orbScale
+                        }
                         .background(PrimaryDarkGreen, CircleShape)
                         .border(2.dp, White.copy(0.5f), CircleShape)
+                        .shadow(elevation = 8.dp, shape = CircleShape)
                 ) {
                     Text("AI", color = White, fontWeight = FontWeight.ExtraBold, fontSize = 24.sp)
                 }
@@ -517,8 +728,6 @@ private fun AdvancedAiDashboard(onClick: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             Text("Your Ayurvedic Health Companion:", style = MaterialTheme.typography.titleMedium.copy(color = White, fontWeight = FontWeight.Bold))
             Text("Ask me about dosage or interactions", style = MaterialTheme.typography.bodySmall.copy(color = Muted))
-            
-
         }
     }
 }
