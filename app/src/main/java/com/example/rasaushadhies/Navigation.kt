@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -45,7 +46,7 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
 
     RasaushadhiTheme {
         androidx.compose.material3.Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().imePadding(),
             color = MaterialTheme.colorScheme.background
         ) {
             NavHost(
