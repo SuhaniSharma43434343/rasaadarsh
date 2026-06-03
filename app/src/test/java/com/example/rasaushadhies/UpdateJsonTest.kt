@@ -1,0 +1,106 @@
+package com.example.rasaushadhies
+
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonArray
+import org.junit.Test
+import java.io.File
+
+class UpdateJsonTest {
+    @Test
+    fun updateMedicinesJson() {
+        val jsonFile = File("src/main/assets/medicines.json")
+        if (!jsonFile.exists()) return
+        val gson = GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create()
+        val jsonArray = gson.fromJson(jsonFile.readText(Charsets.UTF_8), JsonArray::class.java)
+
+        val updatesJson = """
+        {
+            "121": [
+                {"sanskritName": "Vamsha Lochana (वंशलोचन)", "englishName": "Bamboo silica (Tabasheer)", "quantity": "Equal part"},
+                {"sanskritName": "Abhraka Bhasma (अभ्रकभस्म)", "englishName": "Incinerated Mica", "quantity": "Equal part"},
+                {"sanskritName": "Vanga Bhasma (वङ्गभस्म)", "englishName": "Incinerated Tin", "quantity": "Equal part"},
+                {"sanskritName": "Shu. Manaahshila (शु. मैनसिल)", "englishName": "Purified Realgar (Arsenic disulphide)", "quantity": "Equal part"},
+                {"sanskritName": "Satu / Giloy Sattva (सत-गिलोय)", "englishName": "Tinospora cordifolia essence extract", "quantity": "Equal part"},
+                {"sanskritName": "Bakayan Bija Churna (बकायन बीज)", "englishName": "Melia azedarach seed powder", "quantity": "Equal part"},
+                {"sanskritName": "Vidari Svaras (विदारीस्वरस)", "englishName": "Pueraria tuberosa juice — for Bhavana", "quantity": "As required (3 Bhavanas)"},
+                {"sanskritName": "Jeevaniya Gana Kwatha (जीवनीयगणक्वाथ)", "englishName": "Life-sustaining herbs group decoction — for Bhavana", "quantity": "As required (3 Bhavanas)"},
+                {"sanskritName": "Sitopala / Mishri (सितोपल / मिश्री)", "englishName": "Rock candy sugar — equal to all combined", "quantity": "Equal to total weight"}
+            ],
+            "122": [
+                {"sanskritName": "Chandrodaya (चन्द्रोदय) (Rasa Sindura / Mruta Soota)", "englishName": "Red Mercuric Sulphide / Processed Mercury", "quantity": "Equal part"},
+                {"sanskritName": "Abhraka Bhasma (अभ्रकभस्म)", "englishName": "Incinerated Mica", "quantity": "Equal part"},
+                {"sanskritName": "Shu. Gandhaka (शु. गन्धक)", "englishName": "Purified Sulphur", "quantity": "Equal part"},
+                {"sanskritName": "Madhu (मधु)", "englishName": "Honey — for trituration (1 day)", "quantity": "As required"},
+                {"sanskritName": "Udumbara Phala Churna (उदुम्बरफलचूर्ण)", "englishName": "Ripe Ficus racemosa fruit powder — Anupana", "quantity": "12 gm (1 Karsha)"}
+            ],
+            "123": [
+                {"sanskritName": "Rasa Sindura / Mruta Soota (रससिन्दूर)", "englishName": "Red Mercuric Sulphide (processed mercury)", "quantity": "1 part"},
+                {"sanskritName": "Shu. Gandhaka (शु. गन्धक)", "englishName": "Purified Sulphur", "quantity": "4 parts"},
+                {"sanskritName": "Shu. Tankana (शु. टङ्कण)", "englishName": "Purified Borax — for sealing cowrie shells", "quantity": "1/4 part"},
+                {"sanskritName": "Varataka (वराटका)", "englishName": "Cowrie shells — for Puta firing container", "quantity": "Large shells as required"},
+                {"sanskritName": "Gau/Bhains Dugdha (गाय/भैंसदूध)", "englishName": "Cow's or buffalo's milk — for Triturate Tankana coating", "quantity": "As required"},
+                {"sanskritName": "Maricha (मरिच)", "englishName": "Black pepper grains — for Anupana preparation", "quantity": "19 grains"},
+                {"sanskritName": "Jatimool Churna (जातिमूलचूर्ण)", "englishName": "Jasminum officinale root powder — for Anupana", "quantity": "46 gm (1 Pala)"},
+                {"sanskritName": "Bakari Dugdha (बकरी दूध)", "englishName": "Goat's milk — for Triturate with Anupana", "quantity": "As required"},
+                {"sanskritName": "Sarkara / Madhu (शर्करा / मधु)", "englishName": "Sugar or Honey — for Bhavana and Anupana (Sharbat)", "quantity": "As required"}
+            ],
+            "124": [
+                {"sanskritName": "Shu. Tuttha (शु. तुत्थ)", "englishName": "Purified Copper Sulphate (Blue Vitriol)", "quantity": "1 part"},
+                {"sanskritName": "Shu. Parada (शु. पारद)", "englishName": "Purified Mercury", "quantity": "1 part"},
+                {"sanskritName": "Tamra Bhasma (ताम्रभस्म)", "englishName": "Incinerated Copper", "quantity": "1 part"},
+                {"sanskritName": "Shatavari Svaras (शतावरीस्वरस)", "englishName": "Asparagus racemosus juice — for Bhavana", "quantity": "As required"},
+                {"sanskritName": "Sarso Taila (सरसों तेल)", "englishName": "Mustard oil — for Dolaayantra Paka (3 hours)", "quantity": "As required"}
+            ],
+            "125": [
+                {"sanskritName": "Shu. Parada (शु. पारद)", "englishName": "Purified Mercury", "quantity": "1 part"},
+                {"sanskritName": "Shu. Gandhaka (शु. गन्धक)", "englishName": "Purified Sulphur", "quantity": "2 parts (double)"},
+                {"sanskritName": "Arkamool Churna (अर्कमूलचूर्ण)", "englishName": "Calotropis procera root powder", "quantity": "1 part"},
+                {"sanskritName": "Punarnava Mool Churna (पुनर्नवामूलचूर्ण)", "englishName": "Boerhavia diffusa root powder", "quantity": "1 part"},
+                {"sanskritName": "Vasa Panchang Churna (वासापञ्चाङ्गचूर्ण)", "englishName": "Adhatoda vasica five-parts powder", "quantity": "1 part"},
+                {"sanskritName": "Shvetaparajita Mool Churna (श्वेतापराजितामूलचूर्ण)", "englishName": "Nyctanthes arbor-tristis root powder", "quantity": "1 part"},
+                {"sanskritName": "Each herb Svaras (प्रत्येक स्वरस)", "englishName": "Each herb's juice — 1 Bhavana each (3 days total)", "quantity": "As required"},
+                {"sanskritName": "Gopalakarkati Dugdha (गोपालककर्कटीदुग्ध)", "englishName": "Citrullus colocynthis milk sap — for Anupana", "quantity": "As required"},
+                {"sanskritName": "Bhumyamalaka Mool Svaras (भूम्यामलकमूलस्वरस)", "englishName": "Phyllanthus niruri root juice — for Anupana", "quantity": "As required"},
+                {"sanskritName": "Kulatha Kwatha (कुलथ्यक्काथ)", "englishName": "Horse gram decoction — for Anupana", "quantity": "As required"}
+            ]
+        }
+        """.trimIndent()
+        
+        val updatesMap = gson.fromJson(updatesJson, com.google.gson.JsonObject::class.java)
+
+        for (i in 0 until jsonArray.size()) {
+            val med = jsonArray.get(i).asJsonObject
+            
+            if (med.has("ingredients")) {
+                var ingRaw = med.get("ingredients").asString
+                ingRaw = ingRaw.replace("\t", " - ")
+                ingRaw = ingRaw.replace("Ingredient (Sanskrit) - English Name - Quantity\n", "")
+                ingRaw = ingRaw.replace("Ingredient (Sanskrit) - English Name - Quantity", "")
+                med.addProperty("ingredients", ingRaw)
+            }
+            
+            if (med.has("id")) {
+                val idStr = med.get("id").asInt.toString()
+                if (updatesMap.has(idStr)) {
+                    val list = updatesMap.getAsJsonArray(idStr)
+                    med.addProperty("ingredientsListJson", gson.toJson(list))
+                    
+                    val strBuilder = StringBuilder()
+                    for (j in 0 until list.size()) {
+                        val item = list.get(j).asJsonObject
+                        strBuilder.append(item.get("sanskritName").asString)
+                            .append(" - ")
+                            .append(item.get("englishName").asString)
+                            .append(" - ")
+                            .append(item.get("quantity").asString)
+                        if (j < list.size() - 1) strBuilder.append("\n")
+                    }
+                    med.addProperty("ingredients", strBuilder.toString())
+                }
+            }
+        }
+
+        jsonFile.writeText(gson.toJson(jsonArray), Charsets.UTF_8)
+        println("SUCCESSFULLY UPDATED JSON")
+    }
+}
