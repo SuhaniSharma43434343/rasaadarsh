@@ -243,7 +243,9 @@ fun AiChatbotScreen(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = PrimaryGreen,
                             focusedLabelColor = PrimaryGreen,
-                            cursorColor = PrimaryGreen
+                            cursorColor = PrimaryGreen,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -561,6 +563,8 @@ private fun ChatInputBar(
                         unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary,
                     )
                 )
             }
