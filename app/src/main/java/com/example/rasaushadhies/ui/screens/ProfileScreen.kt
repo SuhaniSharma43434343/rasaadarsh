@@ -1,6 +1,7 @@
 package com.example.rasaushadhies.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -19,18 +20,36 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.rasaushadhies.data.local.PractitionerProfile
 import com.example.rasaushadhies.ui.theme.*
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     profile: PractitionerProfile,
     onBack: () -> Unit,
-    onSave: (PractitionerProfile) -> Unit
+    onSave: (PractitionerProfile) -> Unit,
+    onUploadDegreeCertificate: (android.net.Uri) -> Unit,
+    onUploadRegistrationCertificate: (android.net.Uri) -> Unit,
+    onLogout: () -> Unit
 ) {
     var name by remember { mutableStateOf(profile.name) }
     var qualification by remember { mutableStateOf(profile.qualification) }
     var clinicName by remember { mutableStateOf(profile.clinicName) }
     var registrationNo by remember { mutableStateOf(profile.registrationNo) }
+    
+    val degreePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        uri?.let(onUploadDegreeCertificate)
+    }
+
+    val registrationPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        uri?.let(onUploadRegistrationCertificate)
+    }
     
     val isFormValid = name.isNotBlank() && qualification.isNotBlank()
 
@@ -41,6 +60,15 @@ fun ProfileScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Log out",
+                            tint = Color(0xFFC62828)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -123,11 +151,35 @@ fun ProfileScreen(
                 icon = Icons.Default.Badge
             )
             
+            Spacer(Modifier.height(24.dp))
+            
+            Text(
+                text = "Verification Documents Required",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = TextPrimary),
+                modifier = Modifier.align(Alignment.Start)
+            )
+            
+            Spacer(Modifier.height(12.dp))
+
+            CertificateUploadCard(
+                label = "Medical Degree Certificate",
+                status = profile.degreeVerificationStatus,
+                onUploadClick = { degreePickerLauncher.launch("*/*") }
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            CertificateUploadCard(
+                label = "Govt Registration Certificate",
+                status = profile.registrationVerificationStatus,
+                onUploadClick = { registrationPickerLauncher.launch("*/*") }
+            )
+            
             Spacer(Modifier.height(40.dp))
             
             Button(
                 onClick = {
-                    onSave(PractitionerProfile(
+                    onSave(profile.copy(
                         name = name,
                         qualification = qualification,
                         clinicName = clinicName,
@@ -146,6 +198,22 @@ fun ProfileScreen(
                 Icon(Icons.Default.Save, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Save Professional Profile", style = MaterialTheme.typography.titleMedium)
+            }
+            
+            Spacer(Modifier.height(16.dp))
+            
+            OutlinedButton(
+                onClick = onLogout,
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(28.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color(0xFFC62828)
+                ),
+                border = BorderStroke(1.dp, Color(0xFFC62828))
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Log Out", style = MaterialTheme.typography.titleMedium)
             }
             
             Spacer(Modifier.height(16.dp))
@@ -181,4 +249,55 @@ fun ProfileTextField(
             focusedLabelColor = PrimaryGreen
         )
     )
+}
+
+@Composable
+fun CertificateUploadCard(
+    label: String,
+    status: String,
+    onUploadClick: () -> Unit
+) {
+    val statusColor = when (status) {
+        "APPROVED" -> Color(0xFF2E7D32)
+        "PENDING" -> Color(0xFFE65100)
+        "REJECTED" -> Color(0xFFC62828)
+        else -> Muted
+    }
+    
+    val statusText = when (status) {
+        "NONE" -> "Not Uploaded"
+        else -> status
+    }
+
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = White),
+        border = BorderStroke(1.dp, DividerColor.copy(alpha = 0.5f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(label, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, color = TextPrimary))
+                Text(
+                    text = "Status: $statusText",
+                    color = statusColor,
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+            Button(
+                onClick = onUploadClick,
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(if (status == "NONE" || status == "REJECTED") "Upload" else "Re-upload", fontSize = 13.sp)
+            }
+        }
+    }
 }

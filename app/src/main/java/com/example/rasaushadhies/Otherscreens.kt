@@ -25,9 +25,9 @@ import com.example.rasaushadhies.ui.components.RasaTopBar
 import com.example.rasaushadhies.ui.components.SectionLabel
 import com.example.rasaushadhies.ui.theme.*
 
-// ─────────────────────────────────────────────────────────────
-//  SCREEN 6 — Medicine List Screen  (All Medicines A–Z)
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  SCREEN 6 â€” Medicine List Screen  (All Medicines Aâ€“Z)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicineListScreen(
@@ -76,7 +76,11 @@ fun MedicineListScreen(
         filtered.groupBy { it.diseaseCategory }
     }
 
+    com.example.rasaushadhies.ui.theme.AppBackground(
+        screenType = com.example.rasaushadhies.ui.theme.ScreenBackground.LIST
+    ) {
     Scaffold(
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             Column {
@@ -110,7 +114,7 @@ fun MedicineListScreen(
                             TextField(
                                 value = filterQuery,
                                 onValueChange = { filterQuery = it },
-                                placeholder = { Text("Filter medicines…", color = White.copy(0.5f), fontSize = 14.sp) },
+                                placeholder = { Text("Filter medicines...", color = White.copy(0.5f), fontSize = 14.sp) },
                                 singleLine = true,
                                 colors = TextFieldDefaults.colors(
                                     focusedContainerColor   = androidx.compose.ui.graphics.Color.Transparent,
@@ -179,6 +183,7 @@ fun MedicineListScreen(
             }
         }
     }
+    } // end AppBackground
 }
 
 @Composable
@@ -281,9 +286,9 @@ private fun MedicineListRow(index: Int, medicine: Medicine, onClick: () -> Unit)
 }
 
 
-// ─────────────────────────────────────────────────────────────
-//  SCREEN 7 — Saved Medicines Screen
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  SCREEN 7 â€” Saved Medicines Screen
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @Composable
 fun SavedScreen(
     isHindi: Boolean,
@@ -293,8 +298,12 @@ fun SavedScreen(
     onMedicineClick: (Int) -> Unit,
     onBrowse: () -> Unit
 ) {
+    com.example.rasaushadhies.ui.theme.AppBackground(
+        screenType = com.example.rasaushadhies.ui.theme.ScreenBackground.SAVED
+    ) {
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),  // ← fixes white gap
+        containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             RasaTopBar(
                 title    = androidx.compose.ui.res.stringResource(id = com.example.rasaushadhies.R.string.saved),
@@ -315,7 +324,7 @@ fun SavedScreen(
                     .padding(innerPadding)
                     .padding(32.dp)
             ) {
-                Text("🔖", fontSize = 64.sp)
+                Text("ðŸ”–", fontSize = 64.sp)
                 Spacer(Modifier.height(16.dp))
                 Text(
                     "No saved medicines yet",
@@ -365,16 +374,15 @@ fun SavedScreen(
             }
         }
     }
+    } // end AppBackground
 }
-
-
-// ─────────────────────────────────────────────────────────────
-//  SCREEN 8 — About Screen
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  SCREEN 8 â€” About Screen
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),  // ← fixes white gap
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),  // â† fixes white gap
         topBar = {
             RasaTopBar(title = "About", onBack = onBack)
         }
@@ -387,7 +395,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 .padding(innerPadding)
         ) {
 
-            // ── Header ─────────────────────────────────────
+            // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
@@ -406,7 +414,7 @@ fun AboutScreen(onBack: () -> Unit) {
                         .clip(CircleShape)
                         .background(White.copy(0.15f))
                 ) {
-                    Text("ॐ", fontSize = 38.sp, color = AccentAmber)
+                    Text("à¥", fontSize = 38.sp, color = AccentAmber)
                 }
                 Spacer(Modifier.height(16.dp))
                 Text("RASAADARSH", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = White)
@@ -414,7 +422,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 Text("Version 1.0.0", fontSize = 12.sp, color = White.copy(0.5f))
             }
 
-            // ── Cards ──────────────────────────────────────
+            // â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Column(modifier = Modifier.padding(20.dp)) {
 
                 AboutCard(title = "ABOUT THE APP") {
@@ -454,7 +462,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(24.dp))
 
                 Text(
-                    text = "Made with ♥ for Ayurvedic medicine conservation",
+                    text = "Made with â™¥ for Ayurvedic medicine conservation",
                     fontSize = 12.sp,
                     color = Muted,
                     textAlign = TextAlign.Center,
@@ -462,7 +470,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "© 2024  ·  Parul University",
+                    text = "Â© 2024  Â·  Parul University",
                     fontSize = 11.sp,
                     color = Muted.copy(0.7f),
                     textAlign = TextAlign.Center,

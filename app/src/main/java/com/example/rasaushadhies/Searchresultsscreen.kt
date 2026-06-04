@@ -15,11 +15,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import com.example.rasaushadhies.ui.components.RasaTopBar
 import com.example.rasaushadhies.ui.theme.*
 import androidx.compose.ui.text.buildAnnotatedString
@@ -119,6 +123,7 @@ fun SearchResultsScreen(
 ) {
     var selectedFilters by remember { mutableStateOf(setOf<MedicineFilter>()) }
     var visible by remember { mutableStateOf(false) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
     LaunchedEffect(Unit) {
         visible = true
@@ -139,8 +144,11 @@ fun SearchResultsScreen(
         }
     }
 
+    com.example.rasaushadhies.ui.theme.AppBackground(
+        screenType = com.example.rasaushadhies.ui.theme.ScreenBackground.SEARCH_RESULTS
+    ) {
     Scaffold(
-        containerColor = BackgroundColor,
+        containerColor = Color.Transparent,
         topBar = {
             RasaTopBar(
                 title = androidx.compose.ui.res.stringResource(id = com.example.rasaushadhies.R.string.results_title),
@@ -167,13 +175,28 @@ fun SearchResultsScreen(
                 }
             }
 
-            FilterChipRow(
-                filters = availableFilters,
-                selectedFilters = selectedFilters,
-                onFilterToggle = { filter ->
-                    selectedFilters = if (selectedFilters.contains(filter)) selectedFilters - filter else selectedFilters + filter
-                }
-            )
+            // Filter chips row with right-edge fade gradient hint
+            Box(modifier = Modifier.fillMaxWidth()) {
+                FilterChipRow(
+                    filters = availableFilters,
+                    selectedFilters = selectedFilters,
+                    onFilterToggle = { filter ->
+                        selectedFilters = if (selectedFilters.contains(filter)) selectedFilters - filter else selectedFilters + filter
+                    }
+                )
+                // Right-edge fade to hint scrollability
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .width(40.dp)
+                        .height(56.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(Color.Transparent, BackgroundColor)
+                            )
+                        )
+                )
+            }
 
             HorizontalDivider(color = DividerColor.copy(alpha = 0.5f))
 
@@ -190,12 +213,20 @@ fun SearchResultsScreen(
                     }
                 }
             } else {
-                val listState = androidx.compose.foundation.lazy.rememberLazyListState()
                 LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 32.dp)) {
                     itemsIndexed(displayedResults) { index, medicine ->
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = visible,
-                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically(initialOffsetY = { it / 2 })
+                        // Staggered entrance: each card delays by index * 40ms
+                        var cardVisible by remember { mutableStateOf(false) }
+                        LaunchedEffect(medicine.id) {
+                            kotlinx.coroutines.delay(index.coerceAtMost(10) * 40L)
+                            cardVisible = true
+                        }
+                        AnimatedVisibility(
+                            visible = cardVisible,
+                            enter = fadeIn(tween(300)) + slideInVertically(
+                                initialOffsetY = { it / 2 },
+                                animationSpec = tween(300, easing = FastOutSlowInEasing)
+                            )
                         ) {
                             MedicineResultCard(
                                 index = index + 1,
@@ -210,6 +241,7 @@ fun SearchResultsScreen(
             }
         }
     }
+    } // end AppBackground
 }
 
 @Composable
@@ -244,7 +276,21 @@ fun MedicineResultCard(
                 Icon(imageVector = Icons.Default.ChevronRight, contentDescription = null, tint = Muted.copy(0.4f), modifier = Modifier.size(20.dp))
 
                 IconButton(onClick = onToggleBookmark, modifier = Modifier.size(40.dp)) {
-                    Icon(imageVector = if (medicine.isBookmarked) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, contentDescription = "Bookmark", tint = if (medicine.isBookmarked) AccentAmber else Muted.copy(0.2f), modifier = Modifier.size(18.dp))
+                    // Bookmark pop animation
+                    val bookmarkScale by animateFloatAsState(
+                        targetValue = if (medicine.isBookmarked) 1.3f else 1f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        ),
+                        label = "bookmarkScale"
+                    )
+                    Icon(
+                        imageVector = if (medicine.isBookmarked) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                        contentDescription = "Bookmark",
+                        tint = if (medicine.isBookmarked) AccentAmber else Muted.copy(0.2f),
+                        modifier = Modifier.size(18.dp).scale(bookmarkScale)
+                    )
                 }
             }
         }

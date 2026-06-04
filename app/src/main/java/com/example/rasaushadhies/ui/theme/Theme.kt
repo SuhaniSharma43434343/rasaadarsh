@@ -14,9 +14,9 @@ import androidx.compose.foundation.isSystemInDarkTheme
 
 // ─── Colour Palette ───────────────────────────────────────────
 val PrimaryGreen: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF3F6E4D) else Color(0xFF2E5339)
+    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF4A8B63) else Color(0xFF3E7553)
 val PrimaryDarkGreen: Color
-    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF1B3525) else Color(0xFF1B3525)
+    @Composable get() = if (isSystemInDarkTheme()) Color(0xFF3A6E4F) else Color(0xFF336044)
 val AccentAmber: Color
     @Composable get() = if (isSystemInDarkTheme()) Color(0xFFD4AF37) else Color(0xFFD4AF37)
 val AccentAmberLight: Color

@@ -9,5 +9,10 @@ data class PractitionerProfile(
     val qualification: String = "",
     val clinicName: String = "",
     val registrationNo: String = "",
-    val isSetupComplete: Boolean = false
+    val isSetupComplete: Boolean = false,
+    val degreeCertificateUri: String? = null,
+    val registrationCertificateUri: String? = null,
+    val degreeVerificationStatus: String = "NONE", // NONE, PENDING, APPROVED, REJECTED
+    val registrationVerificationStatus: String = "NONE", // NONE, PENDING, APPROVED, REJECTED
+    val isAdmin: Boolean = false
 )

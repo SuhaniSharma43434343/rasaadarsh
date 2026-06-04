@@ -4,15 +4,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,19 +60,6 @@ fun RasaTopBar(
             }
         },
         actions = {
-            if (onLanguageToggle != null) {
-                TextButton(
-                    onClick = onLanguageToggle,
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Text(
-                        text = if (isHindi) "EN" else "हिन्दी",
-                        color = AccentAmber,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
-                    )
-                }
-            }
             actions()
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryDarkGreen),
@@ -209,7 +202,49 @@ fun OutlinedPrimaryButton(
     }
 }
 
-// ─── Medicine List Row Item ───────────────────────────────────
+// ─── Shimmer Loading Card ─────────────────────────────────────
+@Composable
+fun ShimmerMedicineCard(modifier: Modifier = Modifier) {
+    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
+    val shimmerX by infiniteTransition.animateFloat(
+        initialValue = -300f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmerX"
+    )
+    val shimmerBrush = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFFE8E8E8),
+            Color(0xFFF5F5F5),
+            Color(0xFFE8E8E8)
+        ),
+        start = androidx.compose.ui.geometry.Offset(shimmerX, 0f),
+        end = androidx.compose.ui.geometry.Offset(shimmerX + 300f, 300f)
+    )
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8E8E8)),
+        modifier = modifier.width(160.dp).height(120.dp)
+    ) {
+        Box(modifier = Modifier.fillMaxSize().background(shimmerBrush))
+    }
+}
+
+@Composable
+fun ShimmerRow() {
+    androidx.compose.foundation.lazy.LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        items(4) {
+            ShimmerMedicineCard()
+        }
+    }
+}
 @Composable
 fun MedicineListItem(
     index: Int,

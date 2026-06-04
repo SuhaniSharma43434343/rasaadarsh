@@ -8,13 +8,18 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ripple
+
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.zIndex
+
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -37,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.rasaushadhies.ui.components.AyurvedicBackground
 import com.example.rasaushadhies.ui.components.DiseaseChip
 import com.example.rasaushadhies.ui.theme.*
 
@@ -87,7 +93,7 @@ private val popularDiseases = listOf(
     Pair("Shwas Hikka", "🫁")
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun HomeScreen(
     isHindi: Boolean,
@@ -142,23 +148,23 @@ fun HomeScreen(
 
     val recentAlpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 450, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 600, delayMillis = 600, easing = LinearOutSlowInEasing),
         label = "recentAlpha"
     )
     val recentSlide by animateDpAsState(
         targetValue = if (visible) 0.dp else 40.dp,
-        animationSpec = tween(durationMillis = 600, delayMillis = 450, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 600, delayMillis = 600, easing = LinearOutSlowInEasing),
         label = "recentSlide"
     )
 
     val aiAlpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 600, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 600, delayMillis = 450, easing = LinearOutSlowInEasing),
         label = "aiAlpha"
     )
     val aiSlide by animateDpAsState(
         targetValue = if (visible) 0.dp else 40.dp,
-        animationSpec = tween(durationMillis = 600, delayMillis = 600, easing = LinearOutSlowInEasing),
+        animationSpec = tween(durationMillis = 600, delayMillis = 450, easing = LinearOutSlowInEasing),
         label = "aiSlide"
     )
 
@@ -180,150 +186,34 @@ fun HomeScreen(
     }
 
     android.util.Log.d("AppDebug", "HomeScreen drawing content")
-    Scaffold(
-        containerColor = BackgroundColor,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
-    ) { innerPadding ->
+    com.example.rasaushadhies.ui.theme.AppBackground(
+        screenType = com.example.rasaushadhies.ui.theme.ScreenBackground.HOME
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        ) { innerPadding ->
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = innerPadding.calculateBottomPadding())
-        ) {
+        // Feature 1: Parallax — track scroll offset
+        val scrollState = rememberScrollState()
 
-            // ── Top Hero Area (Solid Green) ────────────
-            Box(
+        // Hero height (so content below knows how much space to reserve)
+        val heroHeightDp = 280.dp
+
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            // ── Scrollable content sits below the hero ──────────────
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(heroAlpha)
-                    .offset(y = heroSlide)
-                    .background(PrimaryDarkGreen) 
-                    .padding(horizontal = 20.dp, vertical = 24.dp)
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(bottom = innerPadding.calculateBottomPadding())
             ) {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = visible,
-                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically()
-                        ) {
-                            Text(
-                                text = "RASAADARSH",
-                                style = MaterialTheme.typography.displayLarge.copy(color = White, fontSize = 28.sp)
-                            )
-                        }
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(onClick = onLanguageToggle) {
-                                Text(
-                                    text = if (isHindi) "EN | हिन्दी" else "EN | हिन्दी",
-                                    color = AccentAmberLight,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 14.sp
-                                )
-                            }
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                IconButton(
-                                    onClick = onAbout,
-                                    modifier = Modifier.background(White.copy(0.2f), RoundedCornerShape(12.dp)).size(36.dp)
-                                ) {
-                                    Icon(Icons.Default.Info, contentDescription = "About", tint = White, modifier = Modifier.size(20.dp))
-                                }
-                                Text("About", color = White.copy(0.8f), fontSize = 10.sp, modifier = Modifier.padding(top = 2.dp))
-                            }
-                        }
-                    }
+                // Spacer to push content below the hero
+                Spacer(Modifier.height(heroHeightDp))
 
-                    Spacer(Modifier.height(24.dp))
-
-                    // Glassmorphic Search bar
-                    Card(
-                        shape = RoundedCornerShape(24.dp),
-                        elevation = CardDefaults.cardElevation(0.dp),
-                        colors = CardDefaults.cardColors(containerColor = White.copy(0.15f)),
-                        border = BorderStroke(1.dp, androidx.compose.ui.graphics.Brush.verticalGradient(listOf(White.copy(0.5f), Color.Transparent))),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 16.dp).fillMaxHeight()
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    if (searchQuery.isNotBlank()) {
-                                        focusManager.clearFocus()
-                                        onSearch(searchQuery)
-                                    }
-                                }
-                            ) {
-                                Icon(Icons.Default.Search, contentDescription = "Search", tint = White)
-                            }
-                            Spacer(Modifier.width(4.dp))
-                            TextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                placeholder = {
-                                    Text("Search medicine or disease...", color = White.copy(0.7f), fontSize = 14.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                                },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                keyboardActions = KeyboardActions(
-                                    onSearch = {
-                                        if (searchQuery.isNotBlank()) {
-                                            focusManager.clearFocus()
-                                            onSearch(searchQuery)
-                                        }
-                                    }
-                                ),
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    focusedTextColor = White,
-                                    unfocusedTextColor = White
-                                ),
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(
-                                onClick = {
-                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, if (isHindi) "hi-IN" else "en-US")
-                                    }
-                                    voiceLauncher.launch(intent)
-                                }
-                            ) {
-                                Icon(Icons.Default.Mic, contentDescription = "Voice Search", tint = White)
-                            }
-                            IconButton(
-                                onClick = { 
-                                    if (searchQuery.isNotBlank()) {
-                                        focusManager.clearFocus()
-                                        onSearch(searchQuery)
-                                    }
-                                },
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(PrimaryDarkGreen, CircleShape)
-                            ) {
-                                Icon(Icons.Default.ArrowForward, contentDescription = "Search", tint = White, modifier = Modifier.size(20.dp))
-                            }
-                        }
-                    }
-                }
-            }
-
-            // ── Main content with Topo BG ───────────────────────────────
-            Box(modifier = Modifier.fillMaxSize()) {
-                // Removed Topo Pattern Background to prevent texture too large errors
-
+                // ── Main content ────────────────────────────────────────────
                 Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
 
                     // Popular Diseases
@@ -356,6 +246,11 @@ fun HomeScreen(
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
 
+                    // Show shimmer while medicines are loading
+                    if (allMedicines.isEmpty()) {
+                        com.example.rasaushadhies.ui.components.ShimmerRow()
+                        Spacer(Modifier.height(32.dp))
+                    } else {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(15.dp),
                         modifier = Modifier
@@ -447,6 +342,17 @@ fun HomeScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
+                    } // end else (allMedicines not empty)
+
+                    // Advanced AI Dashboard
+                    Box(
+                        modifier = Modifier
+                            .alpha(aiAlpha)
+                            .offset(y = aiSlide)
+                            .padding(bottom = 32.dp)
+                    ) {
+                        AdvancedAiDashboard(onClick = onAiSearch)
+                    }
 
                     // Recently Viewed
                     if (recentMedicines.isNotEmpty()) {
@@ -470,7 +376,9 @@ fun HomeScreen(
                                         shape = RoundedCornerShape(16.dp),
                                         colors = CardDefaults.cardColors(containerColor = CardBg),
                                         elevation = CardDefaults.cardElevation(8.dp),
-                                        modifier = Modifier.width(160.dp).bounceClick { onSearch(med.name) }
+                                        modifier = Modifier
+                                            .width(160.dp)
+                                            .bounceClick { onSearch(med.name) }
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -510,22 +418,217 @@ fun HomeScreen(
                             }
                         }
                     }
-
-                    // Advanced AI Dashboard
-                    Box(
-                        modifier = Modifier
-                            .alpha(aiAlpha)
-                            .offset(y = aiSlide)
-                    ) {
-                        AdvancedAiDashboard(onClick = onAiSearch)
-                    }
                     
                     Spacer(Modifier.height(100.dp))
+                }   // end content Column
+            }       // end scrollable Column
+
+            // ── Parallax Hero — floats on top, moves at 0.4x ──────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(heroHeightDp)
+                    .alpha(heroAlpha)
+                    .graphicsLayer {
+                        // Parallax: moves up at 0.4x the scroll speed
+                        translationY = -(scrollState.value * 0.4f)
+                    }
+                    .background(PrimaryDarkGreen)
+                    .statusBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                contentAlignment = Alignment.TopStart
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = visible,
+                            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.slideInVertically()
+                        ) {
+                            Column {
+                                Text(
+                                    text = "RASAADARSH",
+                                    style = MaterialTheme.typography.displayLarge.copy(color = White, fontSize = 28.sp)
+                                )
+                                Text(
+                                    text = "Ayurvedic Medicine Reference",
+                                    style = MaterialTheme.typography.bodySmall.copy(color = White.copy(0.7f), fontSize = 12.sp)
+                                )
+                            }
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .width(48.dp)
+                                    .clickable { onAbout() }
+                            ) {
+                                IconButton(
+                                    onClick = onAbout,
+                                    modifier = Modifier
+                                        .background(White.copy(0.2f), RoundedCornerShape(12.dp))
+                                        .size(36.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        contentDescription = "About",
+                                        tint = White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Text(
+                                    "About",
+                                    color = White.copy(0.8f),
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                    maxLines = 1
+                                )
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .width(48.dp)
+                                    .clickable { onProfile() }
+                            ) {
+                                IconButton(
+                                    onClick = onProfile,
+                                    modifier = Modifier
+                                        .background(White.copy(0.2f), RoundedCornerShape(12.dp))
+                                        .size(36.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Person,
+                                        contentDescription = "Profile",
+                                        tint = White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Text(
+                                    "Profile",
+                                    color = White.copy(0.8f),
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(32.dp))
+
+                    // Glassmorphic Search bar (Restored & Premium Size)
+                    Card(
+                        shape = RoundedCornerShape(30.dp),
+                        elevation = CardDefaults.cardElevation(0.dp),
+                        colors = CardDefaults.cardColors(containerColor = White.copy(0.15f)),
+                        border = BorderStroke(
+                            1.dp,
+                            androidx.compose.ui.graphics.Brush.verticalGradient(
+                                listOf(White.copy(0.5f), Color.Transparent)
+                            )
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(64.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .padding(start = 12.dp, end = 4.dp)
+                                .fillMaxHeight()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                tint = White,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { searchQuery = it },
+                                placeholder = {
+                                    Text(
+                                        "Search medicine or disease...",
+                                        color = White.copy(0.7f),
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                keyboardActions = KeyboardActions(
+                                    onSearch = {
+                                        if (searchQuery.isNotBlank()) {
+                                            focusManager.clearFocus()
+                                            onSearch(searchQuery)
+                                        }
+                                    }
+                                ),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedTextColor = White,
+                                    unfocusedTextColor = White
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = {
+                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                                        )
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_LANGUAGE,
+                                            if (isHindi) "hi-IN" else "en-US"
+                                        )
+                                    }
+                                    voiceLauncher.launch(intent)
+                                }
+                            ) {
+                                Icon(Icons.Default.Mic, contentDescription = "Voice Search", tint = White)
+                            }
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(52.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF1B3525))
+                                    .clickable {
+                                        if (searchQuery.isNotBlank()) {
+                                            focusManager.clearFocus()
+                                            onSearch(searchQuery)
+                                        }
+                                    }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowForward,
+                                    contentDescription = "Search",
+                                    tint = White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                    }
                 }
             }
-        }
-    }
-}
+        }           // end outer parallax Box
+    }               // end Scaffold
+    }               // end AppBackground
+}                   // end HomeScreen
 
 @Composable
 fun DarkDiseaseChip(label: String, emoji: String, onClick: () -> Unit) {
@@ -536,7 +639,16 @@ fun DarkDiseaseChip(label: String, emoji: String, onClick: () -> Unit) {
         elevation = CardDefaults.cardElevation(4.dp),
         modifier = Modifier.bounceClick(onClick)
     ) {
-        Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier
+                .clickable(
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = ripple(color = AccentAmber, bounded = true),
+                    onClick = {}  // consumed by bounceClick above — ripple only
+                )
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(emoji, fontSize = 18.sp)
             Spacer(Modifier.width(8.dp))
             Text(label, color = White, fontWeight = FontWeight.Medium, fontSize = 14.sp)

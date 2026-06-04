@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)   // ← already includes kotlin.android internally
     alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
     // ✖ DO NOT add libs.plugins.kotlin.android — it conflicts with kotlin.compose on AGP 9+
 }
 
@@ -45,7 +46,6 @@ android {
         }
         debug {
             isMinifyEnabled = false
-            applicationIdSuffix = ".debug"
         }
     }
 
@@ -78,6 +78,7 @@ dependencies {
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.7.6")
     implementation("org.json:json:20231013")
     // ── Compose UI ────────────────────────────────────────────
     implementation(libs.androidx.compose.ui)
@@ -128,4 +129,11 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // ── Firebase ──────────────────────────────────────────────
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
+    implementation(libs.play.services.auth)
 }
