@@ -230,8 +230,26 @@ class MedicineViewModel(
                             saveLocalPendingUser(updatedProfile)
                             onSuccess()
                         }
-                        .addOnFailureListener { e -> onFailure(e) }
-                }
+                        .addOnFailureListener { e -> 
+                            // Save locally even if Firestore fails
+                            val latestProfile = _profile.value
+                            val updatedProfile = if (certificateType == "degree") {
+                                latestProfile.copy(
+                                    degreeCertificateUri = downloadUri.toString(),
+                                    degreeVerificationStatus = "PENDING"
+                                )
+                            } else {
+                                latestProfile.copy(
+                                    registrationCertificateUri = downloadUri.toString(),
+                                    registrationVerificationStatus = "PENDING"
+                                )
+                            }
+                            _profile.value = updatedProfile
+                            saveProfile(updatedProfile)
+                            saveLocalPendingUser(updatedProfile)
+                            onFailure(e) 
+                        }
+                }.addOnFailureListener { e -> onFailure(e) }
             }
             .addOnFailureListener { storageException ->
                 // Firebase Storage failed! Fallback to local files & Firestore set
@@ -344,37 +362,21 @@ class MedicineViewModel(
         return list
     }
 
-    private fun getMockPendingUser(): Pair<String, PractitionerProfile> {
-        return Pair(
-            "mock_user_1",
-            PractitionerProfile(
-                name = "Dr. Rajesh Kumar",
-                qualification = "BAMS, MD (Ayurveda)",
-                clinicName = "Dhanvantari Ayurveda Kendra",
-                registrationNo = "AYU-88741-A",
-                isSetupComplete = true,
-                degreeCertificateUri = "https://example.com/mock_degree.pdf",
-                registrationCertificateUri = "https://example.com/mock_registration.pdf",
-                degreeVerificationStatus = "PENDING",
-                registrationVerificationStatus = "PENDING",
-                isAdmin = false
-            )
-        )
-    }
+
 
     fun listenToPendingUsers() {
         adminListener?.remove()
         
         // Initial state loaded from local SharedPreferences
         val localList = getLocalPendingUsers()
-        _pendingUsers.value = if (localList.isEmpty()) listOf(getMockPendingUser()) else localList
+        _pendingUsers.value = localList
 
         adminListener = FirebaseFirestore.getInstance().collection("users")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     android.util.Log.e("MedicineViewModel", "Firestore listener error: ${error.message}", error)
                     val currentLocal = getLocalPendingUsers()
-                    _pendingUsers.value = if (currentLocal.isEmpty()) listOf(getMockPendingUser()) else currentLocal
+                    _pendingUsers.value = currentLocal
                     return@addSnapshotListener
                 }
                 if (snapshot != null) {
@@ -400,7 +402,7 @@ class MedicineViewModel(
                         }
                     }
                     val mergedList = (firestoreList + getLocalPendingUsers()).distinctBy { it.first }
-                    _pendingUsers.value = if (mergedList.isEmpty()) listOf(getMockPendingUser()) else mergedList
+                    _pendingUsers.value = mergedList
                 }
             }
     }
