@@ -604,25 +604,28 @@ fun ShlokaFocusMode(
                         }
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.weight(0.1f))
 
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 32.dp),
+                            .weight(1f, fill = false)
+                            .padding(vertical = 16.dp),
                         colors = CardDefaults.cardColors(containerColor = White.copy(alpha = 0.12f)),
-                        border = BorderStroke(1.dp, White.copy(alpha = 0.25f)),
+                        border = BorderStroke(1.dp, White.copy(0.25f)),
                         shape = RoundedCornerShape(24.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
                                 .padding(28.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = shloka,
                                 style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontFamily = com.example.rasaushadhies.ui.theme.TiroDevanagariFontFamily,
                                     color = White,
                                     lineHeight = 38.sp,
                                     fontWeight = FontWeight.Medium,
@@ -633,7 +636,7 @@ fun ShlokaFocusMode(
                         }
                     }
 
-                    Spacer(modifier = Modifier.weight(1.2f))
+                    Spacer(modifier = Modifier.weight(0.15f))
 
                     Text(
                         text = "🌿 Study daily to master the art of Rasaushadhi",

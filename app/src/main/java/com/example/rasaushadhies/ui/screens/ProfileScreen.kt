@@ -51,7 +51,10 @@ fun ProfileScreen(
         uri?.let(onUploadRegistrationCertificate)
     }
     
-    val isFormValid = name.isNotBlank() && qualification.isNotBlank()
+    val isFormValid = name.isNotBlank() && 
+                      qualification.isNotBlank() && 
+                      !profile.degreeCertificateUri.isNullOrBlank() && 
+                      !profile.registrationCertificateUri.isNullOrBlank()
 
     Scaffold(
         topBar = {
@@ -219,10 +222,17 @@ fun ProfileScreen(
             Spacer(Modifier.height(16.dp))
             
             if (!isFormValid) {
-                Text(
-                    "* Name and Qualification are required for sharing",
-                    style = MaterialTheme.typography.labelSmall.copy(color = Color.Red.copy(0.7f))
-                )
+                val errorMsg = when {
+                    name.isBlank() || qualification.isBlank() -> "* Name and Qualification are required"
+                    profile.degreeCertificateUri.isNullOrBlank() || profile.registrationCertificateUri.isNullOrBlank() -> "* Please upload both required verification certificates"
+                    else -> ""
+                }
+                if (errorMsg.isNotEmpty()) {
+                    Text(
+                        errorMsg,
+                        style = MaterialTheme.typography.labelSmall.copy(color = Color.Red.copy(0.7f))
+                    )
+                }
             }
         }
     }
