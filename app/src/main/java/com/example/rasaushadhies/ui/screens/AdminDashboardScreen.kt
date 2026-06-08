@@ -40,6 +40,7 @@ import com.example.rasaushadhies.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
+import com.example.rasaushadhies.ui.components.shimmerEffect
 
 suspend fun loadBitmapFromUri(context: android.content.Context, uriString: String): ImageBitmap? {
     return withContext(Dispatchers.IO) {
@@ -267,6 +268,7 @@ fun AdminDashboardScreen(
                     PendingUserCard(
                         userId = userId,
                         profile = profile,
+                        modifier = Modifier.animateItem(),
                         onViewDocument = { url ->
                             activePreviewUri = url
                             activePreviewTitle = if (url.contains("degree")) "Medical Degree Certificate" else "Govt Registration Certificate"
@@ -329,36 +331,43 @@ fun AdminDashboardScreen(
                         isLoading = false
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(300.dp)
-                            .background(BackgroundColor, RoundedCornerShape(12.dp))
-                            .border(1.dp, DividerColor, RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(color = PrimaryGreen)
-                        } else if (hasError || bitmap == null) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(16.dp)
-                            ) {
-                                Icon(Icons.Default.Cancel, contentDescription = null, tint = Color.Red, modifier = Modifier.size(48.dp))
-                                Spacer(Modifier.height(8.dp))
-                                Text("Failed to load document", style = MaterialTheme.typography.bodyMedium.copy(color = Muted))
-                                Spacer(Modifier.height(4.dp))
-                                Text("Path: $activePreviewUri", style = MaterialTheme.typography.labelSmall.copy(color = Muted), maxLines = 2)
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp)
+                                .shimmerEffect()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(300.dp)
+                                .background(BackgroundColor, RoundedCornerShape(12.dp))
+                                .border(1.dp, DividerColor, RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (hasError || bitmap == null) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Icon(Icons.Default.Cancel, contentDescription = null, tint = Color.Red, modifier = Modifier.size(48.dp))
+                                    Spacer(Modifier.height(8.dp))
+                                    Text("Failed to load document", style = MaterialTheme.typography.bodyMedium.copy(color = Muted))
+                                    Spacer(Modifier.height(4.dp))
+                                    Text("Path: $activePreviewUri", style = MaterialTheme.typography.labelSmall.copy(color = Muted), maxLines = 2)
+                                }
+                            } else {
+                                Image(
+                                    bitmap = bitmap!!,
+                                    contentDescription = "Certificate Preview",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(8.dp),
+                                    contentScale = ContentScale.Fit
+                                )
                             }
-                        } else {
-                            Image(
-                                bitmap = bitmap!!,
-                                contentDescription = "Certificate Preview",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(8.dp),
-                                contentScale = ContentScale.Fit
-                            )
                         }
                     }
                 }
@@ -371,6 +380,7 @@ fun AdminDashboardScreen(
 private fun PendingUserCard(
     userId: String,
     profile: PractitionerProfile,
+    modifier: Modifier = Modifier,
     onViewDocument: (String) -> Unit,
     onApprove: (String) -> Unit,
     onReject: (String) -> Unit
@@ -379,7 +389,7 @@ private fun PendingUserCard(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = White),
         elevation = CardDefaults.cardElevation(2.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // User Header

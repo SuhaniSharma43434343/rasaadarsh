@@ -31,13 +31,23 @@ fun SplashScreen(onSecurityResult: (String) -> Unit) {
     val prefs = remember { context.getSharedPreferences("practitioner_prefs", android.content.Context.MODE_PRIVATE) }
     val securityViewModel: SecurityViewModel = viewModel(factory = SecurityViewModelFactory(prefs))
     
-    var visible by remember { mutableStateOf(true) }
-    val alpha = 1f
-    val scale = 1f
+    var visible by remember { mutableStateOf(false) }
+    
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(1200, easing = LinearEasing),
+        label = "alpha"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0.8f,
+        animationSpec = tween(1200, easing = FastOutSlowInEasing),
+        label = "scale"
+    )
 
     LaunchedEffect(Unit) {
+        visible = true
         android.util.Log.d("AppDebug", "SplashScreen LaunchedEffect started")
-        delay(500)
+        delay(1500) // Increase delay slightly to let animation finish
         
         // Security Audit
         val status = securityViewModel.performSecurityAudit()

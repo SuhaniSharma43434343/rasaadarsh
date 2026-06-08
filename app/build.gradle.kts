@@ -82,6 +82,7 @@ dependencies {
     implementation("org.json:json:20231013")
     // ── Compose UI ────────────────────────────────────────────
     implementation(libs.androidx.compose.ui)
+    implementation("com.airbnb.android:lottie-compose:6.6.0")
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)

@@ -159,6 +159,7 @@ fun MedicineListScreen(
                             disease = disease,
                             count = meds.size,
                             isExpanded = isExpanded,
+                            modifier = Modifier.animateItem(),
                             onClick = { expandedDiseases[disease] = !isExpanded }
                         )
                     }
@@ -166,7 +167,8 @@ fun MedicineListScreen(
                         androidx.compose.animation.AnimatedVisibility(
                             visible = isExpanded,
                             enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
-                            exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
+                            exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut(),
+                            modifier = Modifier.animateItem()
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                                 meds.forEachIndexed { index, medicine ->
@@ -191,6 +193,7 @@ private fun DiseaseGroupHeader(
     disease: String,
     count: Int,
     isExpanded: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Card(
@@ -199,7 +202,7 @@ private fun DiseaseGroupHeader(
             containerColor = if (isExpanded) PrimaryGreen.copy(0.05f) else White
         ),
         border = BorderStroke(1.dp, if (isExpanded) PrimaryGreen.copy(0.2f) else DividerColor.copy(0.2f)),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
@@ -230,12 +233,12 @@ private fun DiseaseGroupHeader(
 }
 
 @Composable
-private fun MedicineListRow(index: Int, medicine: Medicine, onClick: () -> Unit) {
+private fun MedicineListRow(index: Int, medicine: Medicine, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = CardBg),
         elevation = CardDefaults.cardElevation(1.dp),
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
@@ -364,10 +367,11 @@ fun SavedScreen(
                         modifier = Modifier.padding(bottom = 4.dp)
                     )
                 }
-                itemsIndexed(saved) { index, medicine ->
+                itemsIndexed(saved, key = { _, med -> med.id }) { index, medicine ->
                     MedicineListRow(
                         index    = index + 1,
                         medicine = medicine,
+                        modifier = Modifier.animateItem(),
                         onClick  = { onMedicineClick(medicine.id) }
                     )
                 }

@@ -1,9 +1,11 @@
 package com.example.rasaushadhies.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,6 +17,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.rasaushadhies.ui.theme.*
+import androidx.compose.animation.core.*
+import com.example.rasaushadhies.ui.screens.bounceClick
 
 @Composable
 fun LoginScreen(
@@ -26,6 +30,17 @@ fun LoginScreen(
     var adminUsername by remember { mutableStateOf("") }
     var adminPassword by remember { mutableStateOf("") }
     var loginError by remember { mutableStateOf<String?>(null) }
+    
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.9f,
+        targetValue = 1.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "logo_scale"
+    )
 
     com.example.rasaushadhies.ui.theme.AppBackground(
         screenType = com.example.rasaushadhies.ui.theme.ScreenBackground.SAVED
@@ -41,7 +56,12 @@ fun LoginScreen(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(90.dp)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
                     .background(PrimaryGradient, RoundedCornerShape(24.dp))
+                    .border(2.dp, AccentAmber.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
             ) {
                 Text("🌿", fontSize = 42.sp)
             }
@@ -72,15 +92,17 @@ fun LoginScreen(
             }
 
             if (!showAdminLogin) {
-                Button(
-                    onClick = onGoogleSignInClick,
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = PrimaryDarkGreen),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryDarkGreen)
+                        .height(56.dp)
+                        .bounceClick(onGoogleSignInClick)
                 ) {
-                    Text("Sign in with Google", style = MaterialTheme.typography.titleMedium.copy(color = White))
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Sign in with Google", style = MaterialTheme.typography.titleMedium.copy(color = White))
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -121,24 +143,30 @@ fun LoginScreen(
 
                 Spacer(Modifier.height(24.dp))
 
-                Button(
-                    onClick = {
-                        val success = onAdminLoginClick(adminUsername, adminPassword)
-                        if (!success) {
-                            loginError = "Invalid admin credentials!"
-                        } else {
-                            loginError = null
-                        }
-                    },
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = PrimaryDarkGreen),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryDarkGreen)
+                        .height(56.dp)
+                        .bounceClick {
+                            val success = onAdminLoginClick(adminUsername, adminPassword)
+                            if (!success) {
+                                loginError = "Invalid admin credentials!"
+                            } else {
+                                loginError = null
+                            }
+                        }
                 ) {
-                    Icon(Icons.Default.Lock, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Login as Admin", style = MaterialTheme.typography.titleMedium.copy(color = White))
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Lock, contentDescription = null, tint = White)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Login as Admin", style = MaterialTheme.typography.titleMedium.copy(color = White))
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))

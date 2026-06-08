@@ -34,9 +34,16 @@ RASAADARSH is a premium Android application designed for Ayurvedic practitioners
 3. Build the project using `./gradlew assembleDebug`.
 4. Deploy to a physical device or emulator running **Android 7.0 (API 24)** or higher.
 
+## 🛠️ Data Processing Scripts
+
+The project includes several utilities for managing the clinical JSON database:
+- `clean_json.py` / `clean_json.ps1`: Validate and clean raw JSON data.
+- `categorize.py` / `categorize.ps1`: Automatically categorizes medicines based on ingredients.
+- `update_references.py` / `update_medicines_safe.ps1`: Safely updates the asset database with new clinical records.
+
 ## 📄 License & Disclaimer
 
 Information in this app is for educational purposes for registered Ayurvedic Physicians. Formulations must only be used under professional supervision.
 
 ---
-© 2024 · **Parul Institute of Ayurved** · Parul University
+© 2026 · **Parul Institute of Ayurved** · Parul University
