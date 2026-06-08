@@ -1,42 +1,41 @@
 {
   "project_info": {
-    "project_number": "103141314780",
-    "firebase_url": "https://rasaadarsh-8e038-default-rtdb.asia-southeast1.firebasedatabase.app",
-    "project_id": "rasaadarsh-8e038",
-    "storage_bucket": "rasaadarsh-8e038.firebasestorage.app"
+    "project_number": "304905924826",
+    "project_id": "rasaadarsh-a17ee",
+    "storage_bucket": "rasaadarsh-a17ee.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:103141314780:android:9af0272506b3b55ca32419",
+        "mobilesdk_app_id": "1:304905924826:android:547a31b0d520116933b5e3",
         "android_client_info": {
-          "package_name": "com.example.rasaushadhies"
+          "package_name": "com.example.rasaadarsh"
         }
       },
       "oauth_client": [
         {
-          "client_id": "103141314780-uammr6jad75059arbger5pcta3fa06a1.apps.googleusercontent.com",
+          "client_id": "304905924826-btpe5fi5te749nasjnei296f490ko0l2.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.rasaushadhies",
+            "package_name": "com.example.rasaadarsh",
             "certificate_hash": "01ae1b0fbe867cbc96d12bf73509f838c69782c4"
           }
         },
         {
-          "client_id": "103141314780-csfu62f69b48jrrf7nc3g7domk2afa3c.apps.googleusercontent.com",
+          "client_id": "304905924826-mpt8i6ssg0ltlvg6co1ptp75g1kqtf4k.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyB7Is8galtFm-rVGFd4TAWA6AzkL3oQJhg"
+          "current_key": "AIzaSyAbyNdcaxLgFpfmiSoocKgbnPQgujYZTkg"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "103141314780-csfu62f69b48jrrf7nc3g7domk2afa3c.apps.googleusercontent.com",
+              "client_id": "304905924826-mpt8i6ssg0ltlvg6co1ptp75g1kqtf4k.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

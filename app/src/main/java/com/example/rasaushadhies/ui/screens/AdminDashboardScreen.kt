@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.CheckCircle
@@ -18,11 +19,14 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -107,7 +111,9 @@ fun AdminDashboardScreen(
     onApproveUser: (String, String) -> Unit, // userId, certificateType ("degree" or "registration")
     onRejectUser: (String, String) -> Unit,
     onRefresh: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onNavigateToMedicines: () -> Unit,
+    onNavigateToChatbot: () -> Unit
 ) {
     val context = LocalContext.current
     var activePreviewUri by remember { mutableStateOf<String?>(null) }
@@ -138,28 +144,125 @@ fun AdminDashboardScreen(
         },
         containerColor = BackgroundColor
     ) { innerPadding ->
-        if (pendingUsers.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🎉", fontSize = 64.sp)
-                    Spacer(Modifier.height(16.dp))
-                    Text("All caught up!", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, color = TextPrimary))
-                    Text("No pending certificate verifications", style = MaterialTheme.typography.bodyMedium.copy(color = Muted))
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Section 1: Quick Access Tools Header
+            item {
+                Text(
+                    text = "Quick Access Tools",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = TextPrimary)
+                )
+            }
+
+            // Section 2: Quick Access Cards (Medicines & Chatbot)
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // Medicines Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = White),
+                        elevation = CardDefaults.cardElevation(4.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(110.dp)
+                            .bounceClick(onNavigateToMedicines)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Brush.verticalGradient(listOf(PrimaryGreen, PrimaryDarkGreen)))
+                                .padding(16.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxSize()) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Medicines Directory",
+                                    tint = White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Column {
+                                    Text("Medicines", style = MaterialTheme.typography.titleMedium.copy(color = White, fontWeight = FontWeight.Bold))
+                                    Text("Browse database", style = MaterialTheme.typography.bodySmall.copy(color = White.copy(0.8f)))
+                                }
+                            }
+                        }
+                    }
+
+                    // Chatbot Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = White),
+                        elevation = CardDefaults.cardElevation(4.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(110.dp)
+                            .bounceClick(onNavigateToChatbot)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Brush.verticalGradient(listOf(AccentAmberLight, AccentAmber)))
+                                .padding(16.dp)
+                        ) {
+                            Column(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxSize()) {
+                                Icon(
+                                    imageVector = Icons.Default.Chat,
+                                    contentDescription = "AI Chatbot",
+                                    tint = White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Column {
+                                    Text("AI Chatbot", style = MaterialTheme.typography.titleMedium.copy(color = White, fontWeight = FontWeight.Bold))
+                                    Text("Consult assistant", style = MaterialTheme.typography.bodySmall.copy(color = White.copy(0.8f)))
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+
+            // Section 3: Practitioner Verifications Header
+            item {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Practitioner Verifications",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = TextPrimary)
+                )
+            }
+
+            // Section 4: Practitioner Verifications List / Empty State
+            if (pendingUsers.isEmpty()) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = White),
+                        elevation = CardDefaults.cardElevation(2.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("🎉", fontSize = 48.sp)
+                            Spacer(Modifier.height(12.dp))
+                            Text("All caught up!", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = TextPrimary))
+                            Text("No pending certificate verifications", style = MaterialTheme.typography.bodyMedium.copy(color = Muted))
+                        }
+                    }
+                }
+            } else {
                 items(pendingUsers, key = { it.first }) { (userId, profile) ->
                     PendingUserCard(
                         userId = userId,
@@ -175,6 +278,7 @@ fun AdminDashboardScreen(
             }
         }
     }
+
 
     if (activePreviewUri != null) {
         Dialog(onDismissRequest = { activePreviewUri = null }) {

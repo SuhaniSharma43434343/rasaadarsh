@@ -80,18 +80,18 @@ fun Modifier.bounceClick(onClick: () -> Unit) = this.composed {
 }
 
 private val popularDiseases = listOf(
-    Pair("Aamvata", "✋"),
-    Pair("Agnimandya", "🩺"),
-    Pair("Amlapita", "🧪"),
-    Pair("Arsha", "🔥"),
-    Pair("Atisara", "💧"),
-    Pair("Bhagandar", "🪱"),
-    Pair("Grahani", "🍃"),
-    Pair("Hriday Roga", "🫀"),
-    Pair("Jwara", "🌡️"),
-    Pair("Kasa", "🗣️"),
-    Pair("Shiro Roga", "🧠"),
-    Pair("Shwas Hikka", "🫁")
+    Pair("Aamvata", "Av"),
+    Pair("Agnimandya", "Ag"),
+    Pair("Amlapita", "Ap"),
+    Pair("Arsha", "Ar"),
+    Pair("Atisara", "At"),
+    Pair("Bhagandar", "Bh"),
+    Pair("Grahani", "Gr"),
+    Pair("Hriday Roga", "Hr"),
+    Pair("Jwara", "Jw"),
+    Pair("Kasa", "Ka"),
+    Pair("Shiro Roga", "Sr"),
+    Pair("Shwas Hikka", "Sh")
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
@@ -234,7 +234,7 @@ fun HomeScreen(
                         items(popularDiseases.size) { i ->
                             DarkDiseaseChip(
                                 label = popularDiseases[i].first,
-                                emoji = popularDiseases[i].second,
+                                abbreviation = popularDiseases[i].second,
                                 onClick = { onDiseaseClick(popularDiseases[i].first) }
                             )
                         }
@@ -632,7 +632,7 @@ fun HomeScreen(
 }                   // end HomeScreen
 
 @Composable
-fun DarkDiseaseChip(label: String, emoji: String, onClick: () -> Unit) {
+fun DarkDiseaseChip(label: String, abbreviation: String, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
@@ -659,10 +659,25 @@ fun DarkDiseaseChip(label: String, emoji: String, onClick: () -> Unit) {
                     indication = ripple(color = AccentAmber, bounded = true),
                     onClick = onClick
                 )
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(emoji, fontSize = 18.sp)
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .background(
+                        brush = Brush.horizontalGradient(listOf(AccentAmberLight, AccentAmber)),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = abbreviation,
+                    color = PrimaryDarkGreen,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp
+                )
+            }
             Spacer(Modifier.width(8.dp))
             Text(label, color = White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
         }

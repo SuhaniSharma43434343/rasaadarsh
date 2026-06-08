@@ -486,7 +486,7 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
 
                         LoginScreen(
                             onGoogleSignInClick = {
-                                val webClientId = "103141314780-csfu62f69b48jrrf7nc3g7domk2afa3c.apps.googleusercontent.com"
+                                val webClientId = "304905924826-mpt8i6ssg0ltlvg6co1ptp75g1kqtf4k.apps.googleusercontent.com"
                                 val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
                                     .requestIdToken(webClientId)
                                     .requestEmail()
@@ -550,6 +550,12 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                                         }
                                     }
                                 )
+                            },
+                            onNavigateToMedicines = {
+                                navController.navigate(Routes.LIST)
+                            },
+                            onNavigateToChatbot = {
+                                navController.navigate(Routes.CHAT)
                             }
                         )
                     }
