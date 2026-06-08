@@ -886,9 +886,6 @@ fun AiChatbotScreen(
                         }) {
                             Icon(Icons.Default.Delete, contentDescription = "Clear Chat", tint = White)
                         }
-                        IconButton(onClick = { showKeyDialog = true }) {
-                            Icon(Icons.Default.Key, contentDescription = "API Key", tint = White)
-                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                     windowInsets = WindowInsets(0, 0, 0, 0)

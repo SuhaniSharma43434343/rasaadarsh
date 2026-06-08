@@ -150,7 +150,7 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                                 }
                             }
                             Box(modifier = Modifier.fillMaxSize())
-                        } else if (user != null) {
+                        } else if (user != null && !prof.isAdmin) {
                             if (!prof.isSetupComplete) {
                                 LaunchedEffect(Unit) {
                                     navController.navigate(Routes.PROFILE) {
@@ -223,7 +223,7 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                                 }
                             }
                             Box(modifier = Modifier.fillMaxSize())
-                        } else if (user != null) {
+                        } else if (user != null && !prof.isAdmin) {
                             if (!prof.isSetupComplete) {
                                 LaunchedEffect(Unit) {
                                     navController.navigate(Routes.PROFILE) {
@@ -492,7 +492,10 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                                     .requestEmail()
                                     .build()
                                 val signInClient = com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(context, gso)
-                                googleSignInLauncher.launch(signInClient.signInIntent)
+                                // Force Google account chooser dialog to show up by signing out first
+                                signInClient.signOut().addOnCompleteListener {
+                                    googleSignInLauncher.launch(signInClient.signInIntent)
+                                }
                             },
                             onAdminLoginClick = { username, password ->
                                 viewModel.loginAsAdmin(username, password)
@@ -501,6 +504,14 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                     }
 
                     composable(Routes.VERIFY_STATUS) {
+                        LaunchedEffect(profile) {
+                            if (profile.degreeVerificationStatus == "APPROVED" && profile.registrationVerificationStatus == "APPROVED") {
+                                navController.navigate(Routes.HOME) {
+                                    popUpTo(Routes.VERIFY_STATUS) { inclusive = true }
+                                }
+                            }
+                        }
+
                         VerificationStatusScreen(
                             profile = profile,
                             onNavigateToProfile = {
@@ -527,6 +538,9 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                             },
                             onRejectUser = { userId, certType ->
                                 viewModel.rejectCertificate(userId, certType)
+                            },
+                            onRefresh = {
+                                viewModel.listenToPendingUsers()
                             },
                             onLogout = {
                                 viewModel.signOut(

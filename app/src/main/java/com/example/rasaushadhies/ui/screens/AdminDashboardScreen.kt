@@ -2,6 +2,8 @@ package com.example.rasaushadhies.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,17 +16,89 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.rasaushadhies.data.local.PractitionerProfile
 import com.example.rasaushadhies.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.InputStream
+
+suspend fun loadBitmapFromUri(context: android.content.Context, uriString: String): ImageBitmap? {
+    return withContext(Dispatchers.IO) {
+        try {
+            // Check if it is a Base64 string and decode directly
+            val isBase64 = uriString.length > 200 && (
+                uriString.startsWith("/9j/") ||
+                uriString.startsWith("data:image") ||
+                (!uriString.startsWith("http") && !uriString.startsWith("content") && !uriString.startsWith("file") && !uriString.contains("/storage/") && !uriString.contains("/data/"))
+            )
+            if (isBase64) {
+                val cleanBase64 = if (uriString.contains(",")) uriString.substringAfter(",") else uriString
+                val bytes = android.util.Base64.decode(cleanBase64, android.util.Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                return@withContext bitmap?.asImageBitmap()
+            }
+
+            val uri = Uri.parse(uriString)
+            val inputStream: InputStream? = when {
+                uriString.startsWith("/") -> {
+                    java.io.File(uriString).inputStream()
+                }
+                uri.scheme == "file" -> {
+                    val path = uri.path ?: uriString.substringAfter("file://")
+                    java.io.File(path).inputStream()
+                }
+                uri.scheme == "content" -> {
+                    context.contentResolver.openInputStream(uri)
+                }
+                uriString.startsWith("http") -> {
+                    val connection = java.net.URL(uriString).openConnection() as java.net.HttpURLConnection
+                    connection.doInput = true
+                    connection.connect()
+                    connection.inputStream
+                }
+                else -> {
+                    try {
+                        java.io.File(uriString).inputStream()
+                    } catch (e: Exception) {
+                        try {
+                            context.contentResolver.openInputStream(uri)
+                        } catch (e2: Exception) {
+                            val connection = java.net.URL(uriString).openConnection() as java.net.HttpURLConnection
+                            connection.doInput = true
+                            connection.connect()
+                            connection.inputStream
+                        }
+                    }
+                }
+            }
+            if (inputStream != null) {
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream.close()
+                bitmap?.asImageBitmap()
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AdminDashboard", "Error loading bitmap from URI: $uriString", e)
+            null
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,9 +106,12 @@ fun AdminDashboardScreen(
     pendingUsers: List<Pair<String, PractitionerProfile>>, // userId to Profile mapping
     onApproveUser: (String, String) -> Unit, // userId, certificateType ("degree" or "registration")
     onRejectUser: (String, String) -> Unit,
+    onRefresh: () -> Unit,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
+    var activePreviewUri by remember { mutableStateOf<String?>(null) }
+    var activePreviewTitle by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -46,6 +123,9 @@ fun AdminDashboardScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onRefresh) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh list", tint = PrimaryGreen)
+                    }
                     IconButton(onClick = onLogout) {
                         Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Log out", tint = PrimaryGreen)
                     }
@@ -85,30 +165,98 @@ fun AdminDashboardScreen(
                         userId = userId,
                         profile = profile,
                         onViewDocument = { url ->
-                            try {
-                                val uri = Uri.parse(url)
-                                val intent = if (uri.scheme == "file") {
-                                    val file = java.io.File(uri.path ?: "")
-                                    val contentUri = androidx.core.content.FileProvider.getUriForFile(
-                                        context,
-                                        "${context.packageName}.fileprovider",
-                                        file
-                                    )
-                                    Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(contentUri, context.contentResolver.getType(contentUri) ?: "*/*")
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                } else {
-                                    Intent(Intent.ACTION_VIEW, uri)
-                                }
-                                context.startActivity(intent)
-                            } catch (e: Exception) {
-                                android.widget.Toast.makeText(context, "Opening document: $url", android.widget.Toast.LENGTH_LONG).show()
-                            }
+                            activePreviewUri = url
+                            activePreviewTitle = if (url.contains("degree")) "Medical Degree Certificate" else "Govt Registration Certificate"
                         },
                         onApprove = { certType -> onApproveUser(userId, certType) },
                         onReject = { certType -> onRejectUser(userId, certType) }
                     )
+                }
+            }
+        }
+    }
+
+    if (activePreviewUri != null) {
+        Dialog(onDismissRequest = { activePreviewUri = null }) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = White),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .wrapContentHeight()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = activePreviewTitle ?: "Document Preview",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = TextPrimary)
+                        )
+                        IconButton(onClick = { activePreviewUri = null }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close", tint = TextPrimary)
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    var bitmap by remember(activePreviewUri) { mutableStateOf<ImageBitmap?>(null) }
+                    var isLoading by remember(activePreviewUri) { mutableStateOf(true) }
+                    var hasError by remember(activePreviewUri) { mutableStateOf(false) }
+
+                    LaunchedEffect(activePreviewUri) {
+                        isLoading = true
+                        hasError = false
+                        val uriStr = activePreviewUri
+                        if (uriStr != null) {
+                            val loaded = loadBitmapFromUri(context, uriStr)
+                            if (loaded != null) {
+                                bitmap = loaded
+                            } else {
+                                hasError = true
+                            }
+                        }
+                        isLoading = false
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .background(BackgroundColor, RoundedCornerShape(12.dp))
+                            .border(1.dp, DividerColor, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(color = PrimaryGreen)
+                        } else if (hasError || bitmap == null) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Icon(Icons.Default.Cancel, contentDescription = null, tint = Color.Red, modifier = Modifier.size(48.dp))
+                                Spacer(Modifier.height(8.dp))
+                                Text("Failed to load document", style = MaterialTheme.typography.bodyMedium.copy(color = Muted))
+                                Spacer(Modifier.height(4.dp))
+                                Text("Path: $activePreviewUri", style = MaterialTheme.typography.labelSmall.copy(color = Muted), maxLines = 2)
+                            }
+                        } else {
+                            Image(
+                                bitmap = bitmap!!,
+                                contentDescription = "Certificate Preview",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(8.dp),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
+                    }
                 }
             }
         }
