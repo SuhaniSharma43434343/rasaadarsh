@@ -486,7 +486,7 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
 
                         LoginScreen(
                             onGoogleSignInClick = {
-                                val webClientId = "103141314780-csfu62f69b48jrrf7nc3g7domk2afa3c.apps.googleusercontent.com"
+                                val webClientId = context.getString(com.example.rasaushadhies.R.string.default_web_client_id)
                                 val gso = com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
                                     .requestIdToken(webClientId)
                                     .requestEmail()
