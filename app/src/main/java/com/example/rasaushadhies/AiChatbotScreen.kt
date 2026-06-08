@@ -29,6 +29,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
@@ -1066,7 +1070,7 @@ private fun ChatBubble(
                             TypingIndicator()
                         } else {
                             Text(
-                                text = message.text,
+                                text = parseMarkdown(message.text),
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     color = if (isUser) White else TextPrimary,
                                     fontSize = 15.sp
@@ -1250,6 +1254,32 @@ private fun ChatInputBar(value: String, onValueChange: (String) -> Unit, onSend:
                 )
             ) {
                 Icon(Icons.AutoMirrored.Filled.Send, null, tint = White)
+            }
+        }
+    }
+}
+
+fun parseMarkdown(text: String): AnnotatedString {
+    return buildAnnotatedString {
+        val boldParts = text.split("**")
+        boldParts.forEachIndexed { boldIndex, boldPart ->
+            val isBold = boldIndex % 2 == 1
+            val italicParts = boldPart.split("*")
+            italicParts.forEachIndexed { italicIndex, italicPart ->
+                val isItalic = italicIndex % 2 == 1
+                val style = when {
+                    isBold && isItalic -> SpanStyle(fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic)
+                    isBold -> SpanStyle(fontWeight = FontWeight.Bold)
+                    isItalic -> SpanStyle(fontStyle = FontStyle.Italic)
+                    else -> null
+                }
+                if (style != null) {
+                    pushStyle(style)
+                    append(italicPart)
+                    pop()
+                } else {
+                    append(italicPart)
+                }
             }
         }
     }

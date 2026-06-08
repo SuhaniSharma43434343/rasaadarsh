@@ -101,6 +101,7 @@ class MedicineViewModel(
                     if (task.isSuccessful) {
                         val adminUser = task.result?.user
                         _currentUser.value = adminUser
+                        saveProfile(adminProfile) // Ensure admin profile is saved locally under admin UID
                         android.util.Log.i("MedicineViewModel", "Admin logged in successfully via email/password: ${adminUser?.uid}")
                         if (adminUser != null) {
                             val docRef = FirebaseFirestore.getInstance().collection("users").document(adminUser.uid)
@@ -128,6 +129,7 @@ class MedicineViewModel(
                                 if (createCtx.isSuccessful) {
                                     val adminUser = createCtx.result?.user
                                     _currentUser.value = adminUser
+                                    saveProfile(adminProfile) // Ensure admin profile is saved locally under admin UID
                                     android.util.Log.i("MedicineViewModel", "Admin account created successfully: ${adminUser?.uid}")
                                     if (adminUser != null) {
                                         val docRef = FirebaseFirestore.getInstance().collection("users").document(adminUser.uid)
@@ -164,6 +166,7 @@ class MedicineViewModel(
                 if (task.isSuccessful) {
                     val adminUser = task.result?.user
                     _currentUser.value = adminUser
+                    saveProfile(adminProfile) // Ensure admin profile is saved locally under admin UID
                     android.util.Log.d("MedicineViewModel", "Admin logged in anonymously (fallback): ${adminUser?.uid}")
                     if (adminUser != null) {
                         val docRef = FirebaseFirestore.getInstance().collection("users").document(adminUser.uid)
@@ -688,6 +691,24 @@ class MedicineViewModel(
     }
 
     private fun loadProfile(uid: String? = FirebaseAuth.getInstance().currentUser?.uid): PractitionerProfile {
+        val user = FirebaseAuth.getInstance().currentUser
+        val isUserAdmin = (user != null && user.email == "admin@rasaadarsh.com") || 
+                (uid != null && prefs.getBoolean("p_is_admin_$uid", false)) ||
+                (uid == "admin")
+        
+        if (isUserAdmin) {
+            return PractitionerProfile(
+                name = "Administrator",
+                qualification = "Admin",
+                clinicName = "Rasaadarsh HQ",
+                registrationNo = "ADMIN-01",
+                isSetupComplete = true,
+                degreeVerificationStatus = "APPROVED",
+                registrationVerificationStatus = "APPROVED",
+                isAdmin = true
+            )
+        }
+
         val keySuffix = uid ?: "anonymous"
         return PractitionerProfile(
             name = prefs.getString("p_name_$keySuffix", "") ?: "",
@@ -699,7 +720,7 @@ class MedicineViewModel(
             registrationCertificateUri = prefs.getString("p_reg_uri_$keySuffix", null),
             degreeVerificationStatus = prefs.getString("p_deg_status_$keySuffix", "NONE") ?: "NONE",
             registrationVerificationStatus = prefs.getString("p_reg_status_$keySuffix", "NONE") ?: "NONE",
-            isAdmin = prefs.getBoolean("p_is_admin_$keySuffix", false)
+            isAdmin = false
         )
     }
 

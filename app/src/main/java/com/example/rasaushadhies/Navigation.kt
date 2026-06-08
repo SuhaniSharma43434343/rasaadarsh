@@ -550,6 +550,12 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                                         }
                                     }
                                 )
+                            },
+                            onNavigateToMedicines = {
+                                navController.navigate(Routes.LIST)
+                            },
+                            onNavigateToChatbot = {
+                                navController.navigate(Routes.CHAT)
                             }
                         )
                     }
