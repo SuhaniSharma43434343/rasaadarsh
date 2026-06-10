@@ -1,33 +1,47 @@
-package com.example.rasaushadhies.ui.screens
+package com.example.rasaushadhies
 
-import androidx.compose.foundation.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.rasaushadhies.ui.components.LetterAvatar
 import com.example.rasaushadhies.ui.components.RasaTopBar
 import com.example.rasaushadhies.ui.components.SectionLabel
+import com.example.rasaushadhies.ui.screens.*
 import com.example.rasaushadhies.ui.theme.*
+import com.example.rasaushadhies.util.MedicineSearchUtils
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  SCREEN 6 â€” Medicine List Screen  (All Medicines Aâ€“Z)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicineListScreen(
@@ -37,13 +51,13 @@ fun MedicineListScreen(
     onBack: () -> Unit,
     onMedicineClick: (Int) -> Unit
 ) {
-    var filterQuery by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
+    var filterQuery by rememberSaveable { mutableStateOf("") }
     var selectedFilters by remember { mutableStateOf(setOf<MedicineFilter>()) }
 
     val filtered = remember(filterQuery, selectedFilters, medicines) {
         val baseFiltered = if (filterQuery.isBlank()) medicines
         else medicines.filter {
-            com.example.rasaushadhies.util.MedicineSearchUtils.matchesQuery(it, filterQuery)
+            MedicineSearchUtils.matchesQuery(it, filterQuery)
         }
 
         if (selectedFilters.isEmpty()) baseFiltered else {
@@ -52,9 +66,9 @@ fun MedicineListScreen(
                     val k = filter.keyword
                     when (filter.category) {
                         FilterCategory.DOSHA -> {
-                            com.example.rasaushadhies.util.MedicineSearchUtils.isDoshaMatch(m, k)
+                            MedicineSearchUtils.isDoshaMatch(m, k)
                         }
-                        FilterCategory.INGREDIENT -> com.example.rasaushadhies.util.MedicineSearchUtils.isIngredientMatch(m, k)
+                        FilterCategory.INGREDIENT -> MedicineSearchUtils.isIngredientMatch(m, k)
                         FilterCategory.DISEASE -> m.name.contains(k, true) || m.benefits.contains(k, true) || m.diseaseCategory.contains(k, true)
                     }
                 }
@@ -62,7 +76,7 @@ fun MedicineListScreen(
         }
     }
 
-    val expandedSaver = androidx.compose.runtime.saveable.listSaver<androidx.compose.runtime.snapshots.SnapshotStateMap<String, Boolean>, String>(
+    val expandedSaver = listSaver<SnapshotStateMap<String, Boolean>, String>(
         save = { it.filter { entry -> entry.value }.keys.toList() },
         restore = { list ->
             val map = mutableStateMapOf<String, Boolean>()
@@ -70,113 +84,113 @@ fun MedicineListScreen(
             map
         }
     )
-    val expandedDiseases = androidx.compose.runtime.saveable.rememberSaveable(saver = expandedSaver) { mutableStateMapOf<String, Boolean>() }
-    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val expandedDiseases = rememberSaveable(saver = expandedSaver) { mutableStateMapOf<String, Boolean>() }
+    val listState = rememberLazyListState()
     val grouped = remember(filtered) {
         filtered.groupBy { it.diseaseCategory }
     }
 
-    com.example.rasaushadhies.ui.theme.AppBackground(
-        screenType = com.example.rasaushadhies.ui.theme.ScreenBackground.LIST
+    AppBackground(
+        screenType = ScreenBackground.LIST
     ) {
-    Scaffold(
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            Column {
-                RasaTopBar(
-                    title = androidx.compose.ui.res.stringResource(id = com.example.rasaushadhies.R.string.all_medicines),
-                    subtitle = "${filtered.size} records",
-                    onBack = onBack,
-                    isHindi = isHindi,
-                    onLanguageToggle = onLanguageToggle
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(PrimaryDarkGreen)
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 12.dp)
-                ) {
-                    Card(
-                        shape = RoundedCornerShape(22.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = White.copy(alpha = 0.12f)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                Column {
+                    RasaTopBar(
+                        title = stringResource(id = R.string.all_medicines),
+                        subtitle = "${filtered.size} records",
+                        onBack = onBack,
+                        isHindi = isHindi,
+                        onLanguageToggle = onLanguageToggle
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(PrimaryDarkGreen)
+                            .padding(horizontal = 16.dp)
+                            .padding(bottom = 12.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 14.dp)
+                        Card(
+                            shape = RoundedCornerShape(22.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = White.copy(alpha = 0.12f)
+                            ),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = White.copy(0.7f), modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            TextField(
-                                value = filterQuery,
-                                onValueChange = { filterQuery = it },
-                                placeholder = { Text("Filter medicines...", color = White.copy(0.5f), fontSize = 14.sp) },
-                                singleLine = true,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor   = androidx.compose.ui.graphics.Color.Transparent,
-                                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                    focusedIndicatorColor   = androidx.compose.ui.graphics.Color.Transparent,
-                                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                                    focusedTextColor        = White,
-                                    unfocusedTextColor      = White,
-                                ),
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 14.dp)
+                            ) {
+                                Icon(Icons.Default.Search, contentDescription = null, tint = White.copy(0.7f), modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                TextField(
+                                    value = filterQuery,
+                                    onValueChange = { filterQuery = it },
+                                    placeholder = { Text("Filter medicines...", color = White.copy(0.5f), fontSize = 14.sp) },
+                                    singleLine = true,
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor   = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedIndicatorColor   = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        focusedTextColor        = White,
+                                        unfocusedTextColor      = White,
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(48.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
-    ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            FilterChipRow(
-                filters = PREDEFINED_FILTERS,
-                selectedFilters = selectedFilters,
-                onFilterToggle = { filter ->
-                    selectedFilters = if (selectedFilters.contains(filter)) {
-                        selectedFilters - filter
-                    } else {
-                        selectedFilters + filter
+        ) { innerPadding ->
+            Column(modifier = Modifier.padding(innerPadding)) {
+                FilterChipRow(
+                    filters = PREDEFINED_FILTERS,
+                    selectedFilters = selectedFilters,
+                    onFilterToggle = { filter ->
+                        selectedFilters = if (selectedFilters.contains(filter)) {
+                            selectedFilters - filter
+                        } else {
+                            selectedFilters + filter
+                        }
                     }
-                }
-            )
+                )
 
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                grouped.forEach { (disease, meds) ->
-                    val isExpanded = expandedDiseases[disease] ?: false
-                    item(key = disease) {
-                        DiseaseGroupHeader(
-                            disease = disease,
-                            count = meds.size,
-                            isExpanded = isExpanded,
-                            modifier = Modifier.animateItem(),
-                            onClick = { expandedDiseases[disease] = !isExpanded }
-                        )
-                    }
-                    item(key = "content_$disease") {
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = isExpanded,
-                            enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
-                            exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut(),
-                            modifier = Modifier.animateItem()
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                                meds.forEachIndexed { index, medicine ->
-                                    MedicineListRow(
-                                        index = index + 1,
-                                        medicine = medicine,
-                                        onClick = { onMedicineClick(medicine.id) }
-                                    )
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    grouped.forEach { (disease, meds) ->
+                        val isExpanded = expandedDiseases[disease] ?: false
+                        item(key = disease) {
+                            DiseaseGroupHeader(
+                                disease = disease,
+                                count = meds.size,
+                                isExpanded = isExpanded,
+                                modifier = Modifier.animateItem(),
+                                onClick = { expandedDiseases[disease] = !isExpanded }
+                            )
+                        }
+                        item(key = "content_$disease") {
+                            AnimatedVisibility(
+                                visible = isExpanded,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut(),
+                                modifier = Modifier.animateItem()
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                                    meds.forEach { medicine ->
+                                        MedicineListRow(
+                                            medicine = medicine,
+                                            onClick = { onMedicineClick(medicine.id) }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -185,7 +199,6 @@ fun MedicineListScreen(
             }
         }
     }
-    } // end AppBackground
 }
 
 @Composable
@@ -233,7 +246,7 @@ private fun DiseaseGroupHeader(
 }
 
 @Composable
-private fun MedicineListRow(index: Int, medicine: Medicine, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun MedicineListRow(medicine: Medicine, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = CardBg),
@@ -268,15 +281,12 @@ private fun MedicineListRow(index: Int, medicine: Medicine, modifier: Modifier =
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
                     )
-                    // Caution message/icon removed per user request
                 }
                 Text(
                     text = medicine.hindiName,
                     fontSize = 12.sp,
                     color = Muted
                 )
-                
-                // Tags Row removed per user request
             }
             Icon(
                 imageVector = Icons.Default.ChevronRight,
@@ -288,10 +298,6 @@ private fun MedicineListRow(index: Int, medicine: Medicine, modifier: Modifier =
     }
 }
 
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  SCREEN 7 â€” Saved Medicines Screen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @Composable
 fun SavedScreen(
     isHindi: Boolean,
@@ -301,92 +307,89 @@ fun SavedScreen(
     onMedicineClick: (Int) -> Unit,
     onBrowse: () -> Unit
 ) {
-    com.example.rasaushadhies.ui.theme.AppBackground(
-        screenType = com.example.rasaushadhies.ui.theme.ScreenBackground.SAVED
+    AppBackground(
+        screenType = ScreenBackground.SAVED
     ) {
-    Scaffold(
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            RasaTopBar(
-                title    = androidx.compose.ui.res.stringResource(id = com.example.rasaushadhies.R.string.saved),
-                subtitle = "${saved.size} ${androidx.compose.ui.res.stringResource(id = com.example.rasaushadhies.R.string.bookmarked)}",
-                onBack   = onBack,
-                isHindi  = isHindi,
-                onLanguageToggle = onLanguageToggle
-            )
-        }
-    ) { innerPadding ->
-
-        if (saved.isEmpty()) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(32.dp)
-            ) {
-                Text("ðŸ”–", fontSize = 64.sp)
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    "No saved medicines yet",
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = TextAlign.Center
+        Scaffold(
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                RasaTopBar(
+                    title    = stringResource(id = R.string.saved),
+                    subtitle = "${saved.size} ${stringResource(id = R.string.bookmarked)}",
+                    onBack   = onBack,
+                    isHindi  = isHindi,
+                    onLanguageToggle = onLanguageToggle
                 )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Tap the bookmark icon on any medicine to save it here",
-                    color = Muted,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-                Button(
-                    onClick = onBrowse,
-                    shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
-                ) {
-                    Text("Browse Medicines")
-                }
             }
-        } else {
-            val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.padding(innerPadding)
-            ) {
-                item {
+        ) { innerPadding ->
+
+            if (saved.isEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(32.dp)
+                ) {
+                    Text("🔖", fontSize = 64.sp)
+                    Spacer(Modifier.height(16.dp))
                     Text(
-                        text = "YOUR SAVED LIST",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        color = PrimaryGreen,
-                        modifier = Modifier.padding(bottom = 4.dp)
+                        "No saved medicines yet",
+                        style = MaterialTheme.typography.headlineMedium,
+                        textAlign = TextAlign.Center
                     )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Tap the bookmark icon on any medicine to save it here",
+                        color = Muted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
+                    Button(
+                        onClick = onBrowse,
+                        shape = RoundedCornerShape(24.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+                    ) {
+                        Text("Browse Medicines")
+                    }
                 }
-                itemsIndexed(saved, key = { _, med -> med.id }) { index, medicine ->
-                    MedicineListRow(
-                        index    = index + 1,
-                        medicine = medicine,
-                        modifier = Modifier.animateItem(),
-                        onClick  = { onMedicineClick(medicine.id) }
-                    )
+            } else {
+                val listState = rememberLazyListState()
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+                    item {
+                        Text(
+                            text = "YOUR SAVED LIST",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                            color = PrimaryGreen,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
+                    itemsIndexed(saved, key = { _, med -> med.id }) { _, medicine ->
+                        MedicineListRow(
+                            medicine = medicine,
+                            modifier = Modifier.animateItem(),
+                            onClick  = { onMedicineClick(medicine.id) }
+                        )
+                    }
                 }
             }
         }
     }
-    } // end AppBackground
 }
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  SCREEN 8 â€” About Screen
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
     Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),  // â† fixes white gap
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             RasaTopBar(title = "About", onBack = onBack)
         }
@@ -399,14 +402,13 @@ fun AboutScreen(onBack: () -> Unit) {
                 .padding(innerPadding)
         ) {
 
-            // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        androidx.compose.ui.graphics.Brush.verticalGradient(
-                            listOf(PrimaryDarkGreen, androidx.compose.ui.graphics.Color(0xFF3A6B4A))
+                        Brush.verticalGradient(
+                            listOf(PrimaryDarkGreen, Color(0xFF3A6B4A))
                         )
                     )
                     .padding(vertical = 36.dp, horizontal = 24.dp)
@@ -418,7 +420,7 @@ fun AboutScreen(onBack: () -> Unit) {
                         .clip(CircleShape)
                         .background(White.copy(0.15f))
                 ) {
-                    Text("à¥", fontSize = 38.sp, color = AccentAmber)
+                    Text("ॐ", fontSize = 38.sp, color = AccentAmber)
                 }
                 Spacer(Modifier.height(16.dp))
                 Text("RASAADARSH", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = White)
@@ -426,7 +428,6 @@ fun AboutScreen(onBack: () -> Unit) {
                 Text("Version 1.0.0", fontSize = 12.sp, color = White.copy(0.5f))
             }
 
-            // â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Column(modifier = Modifier.padding(20.dp)) {
 
                 AboutCard(title = "ABOUT THE APP") {
@@ -466,7 +467,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 Spacer(Modifier.height(24.dp))
 
                 Text(
-                    text = "Made with â™¥ for Ayurvedic medicine conservation",
+                    text = "Made for Ayurvedic consultants",
                     fontSize = 12.sp,
                     color = Muted,
                     textAlign = TextAlign.Center,
@@ -474,7 +475,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Â© 2024  Â·  Parul University",
+                    text = "2026  .  Parul University",
                     fontSize = 11.sp,
                     color = Muted.copy(0.7f),
                     textAlign = TextAlign.Center,
@@ -490,7 +491,7 @@ fun AboutScreen(onBack: () -> Unit) {
 @Composable
 private fun AboutCard(
     title: String,
-    bgColor: androidx.compose.ui.graphics.Color = CardBg,
+    bgColor: Color = CardBg,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
