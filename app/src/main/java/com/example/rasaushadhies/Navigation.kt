@@ -440,7 +440,12 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
 
                     composable(Routes.LOGIN) {
                         LaunchedEffect(currentUser, profile) {
-                            if (currentUser != null) {
+                            if (profile.isAdmin) {
+                                // Admin always goes to the admin dashboard
+                                navController.navigate(Routes.ADMIN_DASHBOARD) {
+                                    popUpTo(Routes.LOGIN) { inclusive = true }
+                                }
+                            } else if (currentUser != null) {
                                 if (!profile.isSetupComplete) {
                                     navController.navigate(Routes.PROFILE) {
                                         popUpTo(Routes.LOGIN) { inclusive = true }
@@ -453,10 +458,6 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                                     navController.navigate(Routes.HOME) {
                                         popUpTo(Routes.LOGIN) { inclusive = true }
                                     }
-                                }
-                            } else if (profile.isAdmin) {
-                                navController.navigate(Routes.ADMIN_DASHBOARD) {
-                                    popUpTo(Routes.LOGIN) { inclusive = true }
                                 }
                             }
                         }
@@ -478,9 +479,22 @@ fun RasaadarshApp(viewModel: MedicineViewModel) {
                                             Toast.makeText(context, "Authentication failed: ${e.message}", Toast.LENGTH_LONG).show()
                                         }
                                     )
+                                } else {
+                                    Toast.makeText(context, "Sign-In failed: Could not retrieve ID token.", Toast.LENGTH_LONG).show()
                                 }
+                            } catch (e: com.google.android.gms.common.api.ApiException) {
+                                val errorMsg = when (e.statusCode) {
+                                    10 -> "Sign-In Error: SHA-1 fingerprint not registered in Firebase. Please add your debug SHA-1 in Firebase Console."
+                                    12500 -> "Sign-In Error: Google Play Services update required."
+                                    12501 -> "Sign-In cancelled by user."
+                                    7 -> "Sign-In Error: Network unavailable. Please check your connection."
+                                    else -> "Sign-In failed (code ${e.statusCode}): ${e.message}"
+                                }
+                                Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                                android.util.Log.e("Navigation", "Google Sign-In ApiException: code=${e.statusCode}, msg=${e.message}")
                             } catch (e: Exception) {
                                 Toast.makeText(context, "Sign-In Exception: ${e.message}", Toast.LENGTH_LONG).show()
+                                android.util.Log.e("Navigation", "Google Sign-In Exception", e)
                             }
                         }
 

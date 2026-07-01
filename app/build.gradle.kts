@@ -35,6 +35,15 @@ android {
         buildConfigField("String", "OPENROUTER_API_KEY", "\"$apiKey\"")
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("rasaadarsh.jks")
+            storePassword = "rasaadarsh123"
+            keyAlias = "rasa_alias"
+            keyPassword = "rasaadarsh123"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -43,6 +52,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
         debug {
             isMinifyEnabled = false
@@ -71,6 +81,17 @@ android {
         }
     }
 }
+
+val androidComponents = project.extensions.getByType(com.android.build.api.variant.ApplicationAndroidComponentsExtension::class.java)
+androidComponents.onVariants { variant ->
+    variant.outputs.forEach { output ->
+        val version = variant.outputs.first().versionName.get() ?: "1.0"
+        val out = output as? com.android.build.api.variant.impl.VariantOutputImpl
+        out?.outputFileName?.set("Rasaadarsh-v${version}.apk")
+    }
+}
+
+
 
 dependencies {
 

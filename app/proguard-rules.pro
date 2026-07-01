@@ -5,17 +5,23 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep line numbers for easier crash debugging in Play Store Console
+-keepattributes SourceFile,LineNumberTable
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Gson rules
+-keepattributes *Annotation*,Signature
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Keep local database entities, models, and DAOs
+-keep class com.example.rasaushadhies.data.local.** { *; }
+
+# Keep data models parsed from JSON
+-keep class com.example.rasaushadhies.ui.data.** { *; }
+
+# Keep UI state models used in views
+-keep class com.example.rasaushadhies.ui.screens.Medicine { *; }
+
+# Keep Firebase models and Firestore reflections
+-keep class com.google.firebase.** { *; }

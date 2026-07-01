@@ -548,6 +548,25 @@ private fun tryHandleFollowUp(q: String, ctx: ChatContext): Pair<String, ChatCon
 //  resolveQuery — master routing (all 9 features wired)
 // ─────────────────────────────────────────────────────────────────────────────
 
+private fun isGreetingOrConversational(q: String): Boolean {
+    val lower = q.lowercase().trim()
+    val greetings = listOf(
+        "hi", "hello", "hey", "namaste", "pranam", "greetings", "good morning", "good afternoon", "good evening", "yo", "hola"
+    )
+    val conversational = listOf(
+        "your name", "who are you", "who is this", "what is you name", "whats your name", "what is your name",
+        "how are you", "how's it going", "how do you do", "what can you do", "help me", "what are you"
+    )
+    
+    // Check for exact greeting match
+    if (greetings.any { lower == it }) return true
+    
+    // Check if query is conversational question
+    if (conversational.any { lower.contains(it) }) return true
+    
+    return false
+}
+
 private suspend fun resolveQuery(
     userText: String,
     allMedicines: List<Medicine>,
@@ -558,6 +577,12 @@ private suspend fun resolveQuery(
 ): Triple<String, String, ChatContext> {
 
     val q = userText.trim().lowercase()
+
+    // Intercept greetings / conversational inputs first
+    if (isGreetingOrConversational(q)) {
+        val ai = callOpenRouterApi(userText, emptyList(), history, apiKey)
+        return Triple(ai, "ai", context)
+    }
 
     // Save/Bookmark
     if (isSaveIntent(q)) {
@@ -801,6 +826,69 @@ fun AiChatbotScreen(
     var customApiKey by remember { mutableStateOf(prefs.getString("openrouter_api_key", "") ?: "") }
     var showKeyDialog by remember { mutableStateOf(false) }
 
+    var activeSpeakingMessageId by remember { mutableStateOf<String?>(null) }
+    val tts = remember {
+        var ttsInstance: android.speech.tts.TextToSpeech? = null
+        ttsInstance = android.speech.tts.TextToSpeech(ctx) { status ->
+            if (status == android.speech.tts.TextToSpeech.SUCCESS) {
+                ttsInstance?.language = java.util.Locale("hi", "IN")
+            }
+        }
+        ttsInstance
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            tts?.shutdown()
+        }
+    }
+
+    LaunchedEffect(tts) {
+        tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    if (activeSpeakingMessageId == utteranceId) {
+                        activeSpeakingMessageId = null
+                    }
+                }
+            }
+            override fun onError(utteranceId: String?) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    if (activeSpeakingMessageId == utteranceId) {
+                        activeSpeakingMessageId = null
+                    }
+                }
+            }
+        })
+    }
+
+    fun toggleSpeak(messageId: String, text: String) {
+        if (activeSpeakingMessageId == messageId) {
+            tts?.stop()
+            activeSpeakingMessageId = null
+        } else {
+            tts?.stop()
+            activeSpeakingMessageId = messageId
+            
+            val hasHindi = text.any { it.code in 0x0900..0x097F }
+            if (hasHindi) {
+                tts?.language = java.util.Locale("hi", "IN")
+            } else {
+                tts?.language = java.util.Locale.US
+            }
+            
+            val cleanText = text
+                .replace("**", "")
+                .replace("*", "")
+                .replace("`", "")
+                .replace(Regex("(?m)^\\|.*\\|$"), "")
+                .trim()
+                
+            tts?.speak(cleanText, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, messageId)
+        }
+    }
+
     // Feature 3: Search history
     var searchHistory by remember { mutableStateOf(loadSearchHistory(prefs)) }
 
@@ -976,7 +1064,14 @@ fun AiChatbotScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             items(messages.size, key = { messages[it].id }) { i ->
-                ChatBubble(messages[i], allMedicines, onToggleBookmarkByName, onMedicineClick)
+                ChatBubble(
+                    message = messages[i],
+                    allMedicines = allMedicines,
+                    onToggleBookmarkByName = onToggleBookmarkByName,
+                    onMedicineClick = onMedicineClick,
+                    activeSpeakingMessageId = activeSpeakingMessageId,
+                    onSpeakToggle = { id, text -> toggleSpeak(id, text) }
+                )
             }
         }
         } // end AppBackground
@@ -1028,7 +1123,9 @@ private fun ChatBubble(
     message: ChatMessage,
     allMedicines: List<Medicine>,
     onToggleBookmarkByName: (String) -> Unit,
-    onMedicineClick: (Int) -> Unit
+    onMedicineClick: (Int) -> Unit,
+    activeSpeakingMessageId: String?,
+    onSpeakToggle: (String, String) -> Unit
 ) {
     val isUser = message.role == ChatRole.USER
     var visible by remember { mutableStateOf(false) }
@@ -1069,23 +1166,51 @@ private fun ChatBubble(
                         if (message.isLoading) {
                             TypingIndicator()
                         } else {
-                            Text(
-                                text = parseMarkdown(message.text),
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    color = if (isUser) White else TextPrimary,
-                                    fontSize = 15.sp
-                                )
-                            )
+                            val blocks = remember(message.text) { parseMessageBlocks(message.text) }
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                blocks.forEach { block ->
+                                    when (block) {
+                                        is MessageContentBlock.TextBlock -> {
+                                            Text(
+                                                text = parseMarkdown(block.text),
+                                                style = MaterialTheme.typography.bodyLarge.copy(
+                                                    color = if (isUser) White else TextPrimary,
+                                                    fontSize = 15.sp
+                                                )
+                                            )
+                                        }
+                                        is MessageContentBlock.TableBlock -> {
+                                            RenderTable(block, isUser)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                if (!isUser && message.source.isNotBlank() && !message.isLoading) {
-                    Text(
-                        text = if (message.source == "db") "⚡ VERIFIED RECORD" else "🤖 ASSISTANT REASONING",
-                        style = MaterialTheme.typography.labelSmall.copy(color = Muted, fontSize = 9.sp),
+                if (!isUser && !message.isLoading) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(start = 4.dp, top = 4.dp)
-                    )
+                    ) {
+                        if (message.source.isNotBlank()) {
+                            Text(
+                                text = if (message.source == "db") "⚡ VERIFIED RECORD" else "🤖 ASSISTANT REASONING",
+                                style = MaterialTheme.typography.labelSmall.copy(color = Muted, fontSize = 9.sp)
+                            )
+                        }
+                        val isSpeaking = activeSpeakingMessageId == message.id
+                        Icon(
+                            imageVector = if (isSpeaking) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                            contentDescription = "Speak text",
+                            tint = PrimaryGreen,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clickable { onSpeakToggle(message.id, message.text) }
+                        )
+                    }
                 }
 
                 // Inline medicine cards
@@ -1208,6 +1333,12 @@ private fun ChatInputBar(value: String, onValueChange: (String) -> Unit, onSend:
                         focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
                         focusedTextColor = TextPrimary, unfocusedTextColor = TextPrimary
+                    ),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        imeAction = androidx.compose.ui.text.input.ImeAction.Send
+                    ),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                        onSend = { onSend() }
                     )
                 )
             }
@@ -1284,3 +1415,123 @@ fun parseMarkdown(text: String): AnnotatedString {
         }
     }
 }
+
+sealed class MessageContentBlock {
+    data class TextBlock(val text: String) : MessageContentBlock()
+    data class TableBlock(val headers: List<String>, val rows: List<List<String>>) : MessageContentBlock()
+}
+
+fun parseMessageBlocks(text: String): List<MessageContentBlock> {
+    val blocks = mutableListOf<MessageContentBlock>()
+    val lines = text.split("\n")
+    var inTable = false
+    var headers = listOf<String>()
+    val rows = mutableListOf<List<String>>()
+    var currentTextAccumulator = StringBuilder()
+
+    fun flushTextAccumulator() {
+        if (currentTextAccumulator.isNotEmpty()) {
+            val content = currentTextAccumulator.toString().trim()
+            if (content.isNotEmpty()) {
+                blocks.add(MessageContentBlock.TextBlock(content))
+            }
+            currentTextAccumulator = StringBuilder()
+        }
+    }
+
+    var i = 0
+    while (i < lines.size) {
+        val line = lines[i].trim()
+        if (line.startsWith("|") && line.endsWith("|")) {
+            val cells = line.split("|").map { it.trim() }.drop(1).dropLast(1)
+            
+            if (!inTable) {
+                val nextLine = if (i + 1 < lines.size) lines[i + 1].trim() else ""
+                val isSeparator = nextLine.startsWith("|") && nextLine.contains("-") && nextLine.endsWith("|")
+                if (isSeparator) {
+                    flushTextAccumulator()
+                    inTable = true
+                    headers = cells
+                    rows.clear()
+                    i += 2 // skip header and separator lines
+                    continue
+                }
+            } else {
+                rows.add(cells)
+                i++
+                continue
+            }
+        }
+        
+        if (inTable) {
+            blocks.add(MessageContentBlock.TableBlock(headers, rows.toList()))
+            inTable = false
+        }
+        
+        currentTextAccumulator.append(lines[i]).append("\n")
+        i++
+    }
+    
+    if (inTable) {
+        blocks.add(MessageContentBlock.TableBlock(headers, rows.toList()))
+    }
+    flushTextAccumulator()
+    
+    return blocks
+}
+
+@Composable
+private fun RenderTable(block: MessageContentBlock.TableBlock, isUser: Boolean) {
+    val borderColor = if (isUser) White.copy(alpha = 0.5f) else DividerColor
+    val headerBg = if (isUser) White.copy(alpha = 0.15f) else PrimaryGreen.copy(alpha = 0.08f)
+    
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
+    ) {
+        // Headers
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(headerBg)
+                .padding(vertical = 8.dp, horizontal = 12.dp)
+        ) {
+            block.headers.forEach { header ->
+                Text(
+                    text = parseMarkdown(header),
+                    fontWeight = FontWeight.Bold,
+                    color = if (isUser) White else PrimaryDarkGreen,
+                    fontSize = 13.sp,
+                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+                )
+            }
+        }
+        
+        HorizontalDivider(color = borderColor)
+        
+        // Rows
+        block.rows.forEachIndexed { rowIndex, row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                row.forEach { cell ->
+                    Text(
+                        text = parseMarkdown(cell),
+                        color = if (isUser) White else TextPrimary,
+                        fontSize = 13.sp,
+                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp)
+                    )
+                }
+            }
+            if (rowIndex < block.rows.lastIndex) {
+                HorizontalDivider(color = borderColor.copy(alpha = 0.5f))
+            }
+        }
+    }
+}
+
