@@ -25,3 +25,8 @@
 
 # Keep Firebase models and Firestore reflections
 -keep class com.google.firebase.** { *; }
+
+# Keep subclasses of com.google.gson.reflect.TypeToken to preserve generic signatures
+-keep class com.google.gson.** { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
+-keepattributes Signature

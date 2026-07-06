@@ -125,7 +125,7 @@ fun SplashScreen(onSecurityResult: (String) -> Unit) {
             Spacer(Modifier.height(24.dp))
 
             Text(
-                text = "v1.0  ·  Parul Institute of Ayurved",
+                text = "v1.0  ·  Parul Institute of Ayurveda and Research",
                 fontSize = 11.sp,
                 color = PrimaryDarkGreen.copy(alpha = 0.6f),
                 letterSpacing = 0.5.sp
